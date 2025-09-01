@@ -1,0 +1,1 @@
+import React from "react"; const AboutPage = () => <div className="container mx-auto px-4 py-8"><h1 className="text-4xl font-bold text-center mb-8">About InfraXpert</h1><p className="text-center text-lg">Since 2008, InfraXpert has been at the forefront of India construction materials supply industry.</p></div>; export default AboutPage;
