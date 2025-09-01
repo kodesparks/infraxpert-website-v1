@@ -71,3 +71,42 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+@layer utilities {
+  /* Hide scrollbar for mobile */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+  
+  /* Custom responsive utilities */
+  .xs\:inline {
+    @media (min-width: 475px) {
+      display: inline;
+    }
+  }
+  
+  .xs\:hidden {
+    @media (min-width: 475px) {
+      display: none;
+    }
+  }
+  
+  /* Line clamp utilities */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

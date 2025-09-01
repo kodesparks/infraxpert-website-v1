@@ -226,23 +226,23 @@ const ProductsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
-          <div>
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
+        {/* Header - Fixed mobile stacking issue */}
+        <div className="mb-6 sm:mb-8">
+          <div className="text-center sm:text-left">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-2 sm:mb-4">
               Construction Materials
             </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-gray-600">
+            <p className="text-sm sm:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto sm:mx-0">
               Premium quality construction materials from India's most trusted brands
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Mobile Categories */}
-          <div className="lg:hidden mb-6">
-            <div className="flex space-x-3 overflow-x-auto pb-4">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+          {/* Mobile Categories - Improved mobile layout */}
+          <div className="lg:hidden">
+            <div className="flex space-x-2 sm:space-x-3 overflow-x-auto pb-4 scrollbar-hide">
               {categories.map(category => {
                 const Icon = category.icon
                 const isActive = selectedCategory === category.id
@@ -250,17 +250,18 @@ const ProductsPage = () => {
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`flex-shrink-0 flex items-center px-4 py-2 rounded-full font-medium transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                    className={`flex-shrink-0 flex items-center px-3 sm:px-4 py-2 rounded-full font-medium transition-all duration-200 cursor-pointer whitespace-nowrap text-xs sm:text-sm ${
                       isActive 
                         ? 'bg-blue-700 text-white shadow-md' 
-                        : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-700 border'
+                        : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-200'
                     }`}
                   >
-                    <div className="flex items-center justify-center w-4 h-4 mr-2">
-                      <Icon className="w-4 h-4" />
+                    <div className="flex items-center justify-center w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2">
+                      <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
-                    {category.name}
-                    <span className={`ml-2 text-xs px-2 py-1 rounded-full ${
+                    <span className="hidden xs:inline">{category.name}</span>
+                    <span className="xs:hidden">{category.name.split(' ')[0]}</span>
+                    <span className={`ml-1.5 sm:ml-2 text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
                       isActive 
                         ? 'bg-white/20 text-white' 
                         : 'bg-gray-200 text-gray-600'
@@ -323,16 +324,16 @@ const ProductsPage = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Product Count and Sort */}
+            {/* Product Count and Sort - Improved mobile layout */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
-              <div className="text-gray-600 text-sm sm:text-base">
+              <div className="text-gray-600 text-sm sm:text-base text-center sm:text-left">
                 Showing {filteredProducts.length} products
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-center sm:justify-end">
                 <select 
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 sm:px-4 py-2 bg-white text-gray-700 pr-8 text-sm sm:text-base"
+                  className="border border-gray-300 rounded-lg px-3 sm:px-4 py-2 bg-white text-gray-700 pr-8 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="popular">Sort by: Popular</option>
                   <option value="price-low">Price: Low to High</option>
@@ -343,8 +344,8 @@ const ProductsPage = () => {
               </div>
             </div>
 
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {/* Products Grid - Improved mobile responsiveness */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               {filteredProducts.map(product => (
                 <div 
                   key={product.id} 
@@ -354,27 +355,27 @@ const ProductsPage = () => {
                   <div className="relative overflow-hidden">
                     <img 
                       alt={product.name} 
-                      className="w-full h-40 sm:h-48 object-cover object-top group-hover:scale-110 transition-transform duration-300" 
+                      className="w-full h-32 sm:h-40 lg:h-48 object-cover object-top group-hover:scale-110 transition-transform duration-300" 
                       src={product.image}
                     />
                     
                     {/* Discount Badge */}
-                    <div className="absolute top-3 sm:top-4 left-3 sm:left-4">
+                    <div className="absolute top-2 sm:top-3 lg:top-4 left-2 sm:left-3 lg:left-4">
                       <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                         {product.discount}% OFF
                       </span>
                     </div>
                     
                     {/* Wishlist Icon */}
-                    <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
-                      <div className="w-7 sm:w-8 h-7 sm:h-8 bg-white/90 rounded-full flex items-center justify-center cursor-pointer hover:bg-white transition-colors">
-                        <Heart className="text-gray-700 text-sm sm:text-base" />
+                    <div className="absolute top-2 sm:top-3 lg:top-4 right-2 sm:right-3 lg:right-4">
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-white/90 rounded-full flex items-center justify-center cursor-pointer hover:bg-white transition-colors">
+                        <Heart className="text-gray-700 text-xs sm:text-sm lg:text-base" />
                       </div>
                     </div>
                   </div>
 
                   {/* Product Details */}
-                  <div className="p-4 sm:p-6">
+                  <div className="p-3 sm:p-4 lg:p-6">
                     {/* Brand and Stock Status */}
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs sm:text-sm font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded">
@@ -390,41 +391,44 @@ const ProductsPage = () => {
                     </div>
 
                     {/* Product Name */}
-                    <h3 className="text-sm sm:text-lg font-bold text-gray-800 mb-3 group-hover:text-blue-700 transition-colors line-clamp-2">
+                    <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-800 mb-2 sm:mb-3 group-hover:text-blue-700 transition-colors line-clamp-2">
                       {product.name}
                     </h3>
 
                     {/* Rating */}
-                    <div className="flex items-center mb-3">
+                    <div className="flex items-center mb-2 sm:mb-3">
                       <div className="flex items-center">
-                        <div className="flex items-center justify-center w-4 h-4 mr-1">
-                          <Star className="text-yellow-400 text-sm fill-current" />
+                        <div className="flex items-center justify-center w-3 h-3 sm:w-4 sm:h-4 mr-1">
+                          <Star className="text-yellow-400 text-xs sm:text-sm fill-current" />
                         </div>
                         <span className="text-xs sm:text-sm font-medium text-gray-700 mr-2">
                           {product.rating}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 hidden sm:inline">
                           ({product.reviews} reviews)
+                        </span>
+                        <span className="text-xs text-gray-500 sm:hidden">
+                          ({product.reviews})
                         </span>
                       </div>
                     </div>
 
                     {/* Features */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 mb-3 sm:mb-4">
                       {product.features.map((feature, index) => (
                         <div key={index} className="flex items-center text-xs text-gray-600">
-                          <div className="flex items-center justify-center w-3 h-3 mr-2">
-                            <Check className="text-green-500 w-3 h-3" />
+                          <div className="flex items-center justify-center w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1.5 sm:mr-2">
+                            <Check className="text-green-500 w-2.5 h-2.5 sm:w-3 sm:h-3" />
                           </div>
-                          {feature}
+                          <span className="truncate">{feature}</span>
                         </div>
                       ))}
                     </div>
 
                     {/* Pricing */}
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
                       <div>
-                        <div className="text-lg sm:text-xl font-bold text-gray-800">
+                        <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
                           ₹{product.currentPrice.toLocaleString()}{product.unit}
                         </div>
                         <div className="text-xs sm:text-sm text-gray-500 line-through">
@@ -435,12 +439,12 @@ const ProductsPage = () => {
 
                     {/* Action Buttons */}
                     <div className="flex space-x-2">
-                      <button className="flex-1 bg-blue-700 text-white py-2 px-3 sm:px-4 rounded-lg font-medium hover:bg-violet-700 transition-colors cursor-pointer whitespace-nowrap text-sm sm:text-base">
+                      <button className="flex-1 bg-blue-700 text-white py-2 px-2 sm:px-3 lg:px-4 rounded-lg font-medium hover:bg-violet-700 transition-colors cursor-pointer whitespace-nowrap text-xs sm:text-sm lg:text-base">
                         Add to Cart
                       </button>
-                      <button className="px-3 sm:px-4 py-2 border-2 border-blue-700 text-blue-700 rounded-lg hover:bg-blue-700 hover:text-white transition-colors cursor-pointer">
-                        <div className="flex items-center justify-center w-4 h-4">
-                          <Eye className="text-sm sm:text-base" />
+                      <button className="px-2 sm:px-3 lg:px-4 py-2 border-2 border-blue-700 text-blue-700 rounded-lg hover:bg-blue-700 hover:text-white transition-colors cursor-pointer">
+                        <div className="flex items-center justify-center w-3 h-3 sm:w-4 sm:h-4">
+                          <Eye className="text-xs sm:text-sm lg:text-base" />
                         </div>
                       </button>
                     </div>

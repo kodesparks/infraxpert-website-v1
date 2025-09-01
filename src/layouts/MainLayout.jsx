@@ -1,14 +1,55 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Menu } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 const MainLayout = ({ children }) => {
   const location = useLocation()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const mobileMenuRef = useRef(null)
+  const mobileButtonRef = useRef(null)
   
   const isActive = (path) => {
     return location.pathname === path
   }
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        mobileMenuRef.current && 
+        !mobileMenuRef.current.contains(event.target) &&
+        mobileButtonRef.current &&
+        !mobileButtonRef.current.contains(event.target)
+      ) {
+        closeMobileMenu()
+      }
+    }
+
+    if (isMobileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      // Prevent body scroll when mobile menu is open
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isMobileMenuOpen])
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    closeMobileMenu()
+  }, [location.pathname])
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,6 +62,8 @@ const MainLayout = ({ children }) => {
                 InfraXpert
               </h1>
             </div>
+            
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
               <Link 
                 to="/" 
@@ -79,9 +122,93 @@ const MainLayout = ({ children }) => {
                 Cart
               </Link>
             </nav>
-            <button className="md:hidden flex items-center justify-center w-8 h-8 cursor-pointer">
-              <Menu className="text-xl text-gray-700" />
+
+            {/* Mobile Menu Button */}
+            <button 
+              ref={mobileButtonRef}
+              onClick={toggleMobileMenu}
+              className="md:hidden flex items-center justify-center w-10 h-10 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileMenuOpen ? (
+                <X className="text-xl text-gray-700" />
+              ) : (
+                <Menu className="text-xl text-gray-700" />
+              )}
             </button>
+          </div>
+
+          {/* Mobile Navigation Menu */}
+          <div 
+            ref={mobileMenuRef}
+            className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
+              isMobileMenuOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'
+            }`}
+          >
+            <nav className="bg-white rounded-xl shadow-2xl p-4 space-y-2 border border-gray-100">
+              <Link 
+                to="/" 
+                onClick={closeMobileMenu}
+                className={`block px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isActive('/') 
+                    ? 'bg-blue-700 text-white shadow-md' 
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm'
+                }`}
+              >
+                Home
+              </Link>
+              <Link 
+                to="/products" 
+                onClick={closeMobileMenu}
+                className={`block px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isActive('/products') 
+                    ? 'bg-blue-700 text-white shadow-md' 
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm'
+                }`}
+              >
+                Products
+              </Link>
+              <Link 
+                to="/services" 
+                onClick={closeMobileMenu}
+                className={`block px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isActive('/services') 
+                    ? 'bg-blue-700 text-white shadow-md' 
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm'
+                }`}
+              >
+                Services
+              </Link>
+              <Link 
+                to="/about" 
+                onClick={closeMobileMenu}
+                className={`block px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isActive('/about') 
+                    ? 'bg-blue-700 text-white shadow-md' 
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm'
+                }`}
+              >
+                About
+              </Link>
+              <Link 
+                to="/contact" 
+                onClick={closeMobileMenu}
+                className={`block px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isActive('/contact') 
+                    ? 'bg-blue-700 text-white shadow-md' 
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm'
+                }`}
+              >
+                Contact
+              </Link>
+              <Link 
+                to="/products" 
+                onClick={closeMobileMenu}
+                className="block px-4 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-violet-700 transition-all duration-300 text-center shadow-md hover:shadow-lg"
+              >
+                Cart
+              </Link>
+            </nav>
           </div>
         </div>
       </header>
