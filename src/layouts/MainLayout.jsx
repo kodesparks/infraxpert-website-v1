@@ -115,12 +115,26 @@ const MainLayout = ({ children }) => {
               >
                 Contact
               </Link>
-              <Link 
-                to="/products" 
-                className="bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-violet-700 transition-all duration-300 font-medium whitespace-nowrap cursor-pointer"
-              >
-                Cart
-              </Link>
+              <div className="flex items-center space-x-4">
+                <Link 
+                  to="/login" 
+                  className="text-gray-700 hover:text-blue-700 font-medium transition-colors"
+                >
+                  Login
+                </Link>
+                <Link 
+                  to="/signup" 
+                  className="bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-violet-700 transition-all duration-300 font-medium whitespace-nowrap cursor-pointer"
+                >
+                  Sign Up
+                </Link>
+                <Link 
+                  to="/products" 
+                  className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition-all duration-300 font-medium whitespace-nowrap cursor-pointer"
+                >
+                  Cart
+                </Link>
+              </div>
             </nav>
 
             {/* Mobile Menu Button */}
@@ -201,13 +215,29 @@ const MainLayout = ({ children }) => {
               >
                 Contact
               </Link>
-              <Link 
-                to="/products" 
-                onClick={closeMobileMenu}
-                className="block px-4 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-violet-700 transition-all duration-300 text-center shadow-md hover:shadow-lg"
-              >
-                Cart
-              </Link>
+              <div className="space-y-2 pt-2 border-t border-gray-200">
+                <Link 
+                  to="/login" 
+                  onClick={closeMobileMenu}
+                  className="block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg font-medium transition-all duration-200 text-center"
+                >
+                  Login
+                </Link>
+                <Link 
+                  to="/signup" 
+                  onClick={closeMobileMenu}
+                  className="block px-4 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-violet-700 transition-all duration-300 text-center shadow-md hover:shadow-lg"
+                >
+                  Sign Up
+                </Link>
+                <Link 
+                  to="/products" 
+                  onClick={closeMobileMenu}
+                  className="block px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all duration-300 text-center"
+                >
+                  Cart
+                </Link>
+              </div>
             </nav>
           </div>
         </div>

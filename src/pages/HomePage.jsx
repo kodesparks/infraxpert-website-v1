@@ -32,7 +32,7 @@ const HomePage = () => {
                 Cart
               </button>
               <button className="bg-[#345deb] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#2d4fd8] transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap cursor-pointer">
-                View Orders
+                View Products
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
