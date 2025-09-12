@@ -44,11 +44,6 @@ const SignupPage = () => {
     e.preventDefault()
     setError('')
     
-    // Validate phone number format
-    if (formData.phone && !formData.phone.startsWith('+')) {
-      setError('Invalid phone number. Use format: +<country_code><number> (e.g., +917386898469)')
-      return
-    }
     
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match!')
@@ -172,7 +167,7 @@ const SignupPage = () => {
                     id="phone"
                     name="phone"
                     type="tel"
-                    placeholder="+918482848382"
+                    placeholder="9876543210"
                     value={formData.phone}
                     onChange={handleInputChange}
                     className="pl-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
