@@ -1,5 +1,7 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { Truck, Shield, Clock, ShoppingCart, User, MapPin, Check, Calculator, Headphones, FileText, DollarSign, Globe, Award, Smartphone, CreditCard, Phone, Award as AwardIcon } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import heroBackground from '@/assets/images/hero-background.jpg'
 import cementImage from '@/assets/images/cement.jpg'
 import steelImage from '@/assets/images/steel.jpg'
@@ -7,6 +9,22 @@ import mixerImage from '@/assets/images/mixer.jpg'
 import warehouseImage from '@/assets/images/warehouse.jpg'
 
 const HomePage = () => {
+  const { isAuthenticated } = useAuth()
+
+  const handleProtectedAction = (action) => {
+    if (!isAuthenticated) {
+      // Redirect to login with return URL
+      window.location.href = `/login?redirectUrl=${encodeURIComponent(window.location.pathname)}`
+    } else {
+      // User is authenticated, proceed with action
+      if (action === 'products') {
+        window.location.href = '/products'
+      } else if (action === 'cart') {
+        window.location.href = '/products' // Assuming cart is on products page
+      }
+    }
+  }
+
   return (
     <div>
       {/* Hero Section */}
@@ -28,10 +46,16 @@ const HomePage = () => {
               Your trusted partner for cement, steel, and concrete mix supplies. Quality materials, competitive prices, and reliable delivery for construction projects of all sizes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
-              <button className="bg-gradient-to-r from-[#345deb] to-[#832fe3] text-white px-12 py-5 rounded-xl text-xl font-bold hover:from-[#2d4fd8] hover:to-[#7a2ad8] transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 whitespace-nowrap cursor-pointer border-2 border-[#fbbf24]">
+              <button 
+                onClick={() => handleProtectedAction('cart')}
+                className="bg-gradient-to-r from-[#345deb] to-[#832fe3] text-white px-12 py-5 rounded-xl text-xl font-bold hover:from-[#2d4fd8] hover:to-[#7a2ad8] transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 whitespace-nowrap cursor-pointer border-2 border-[#fbbf24]"
+              >
                 Cart
               </button>
-              <button className="bg-[#345deb] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#2d4fd8] transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap cursor-pointer">
+              <button 
+                onClick={() => handleProtectedAction('products')}
+                className="bg-[#345deb] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#2d4fd8] transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap cursor-pointer"
+              >
                 View Products
               </button>
             </div>
@@ -134,7 +158,12 @@ const HomePage = () => {
                     Bulk & Retail
                   </div>
                 </div>
-                <a className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center" href="/products">Cart</a>
+                <button 
+                  onClick={() => handleProtectedAction('cart')}
+                  className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center"
+                >
+                  Cart
+                </button>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer">
@@ -165,7 +194,12 @@ const HomePage = () => {
                     Custom Lengths
                   </div>
                 </div>
-                <a className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center" href="/products">Cart</a>
+                <button 
+                  onClick={() => handleProtectedAction('cart')}
+                  className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center"
+                >
+                  Cart
+                </button>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer">
@@ -196,7 +230,12 @@ const HomePage = () => {
                     Site Delivery
                   </div>
                 </div>
-                <a className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center" href="/products">Cart</a>
+                <button 
+                  onClick={() => handleProtectedAction('cart')}
+                  className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center"
+                >
+                  Cart
+                </button>
               </div>
             </div>
           </div>
@@ -453,7 +492,7 @@ const HomePage = () => {
           </div>
           <div className="border-t border-gray-800 mt-16 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <div className="text-gray-400 text-sm">© 2024 InfraXpert. All rights reserved.</div>
+              <div className="text-gray-400 text-sm">© 2025 InfraXpert. All rights reserved.</div>
               <div className="flex space-x-6 text-sm">
                 <a className="text-gray-400 hover:text-white transition-colors" href="/privacy">Privacy Policy</a>
                 <a className="text-gray-400 hover:text-white transition-colors" href="/terms">Terms of Service</a>

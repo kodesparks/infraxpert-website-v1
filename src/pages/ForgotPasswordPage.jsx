@@ -5,27 +5,32 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 const ForgotPasswordPage = () => {
+  const { forgotPassword } = useAuth()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isEmailSent, setIsEmailSent] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
+    setError('')
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Password reset request for:', email)
-      setIsLoading(false)
+    try {
+      await forgotPassword(email)
       setIsEmailSent(true)
-    }, 1500)
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to send reset email. Please try again.')
+      setIsLoading(false)
+    }
   }
 
   if (isEmailSent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-violet-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           {/* Back to Login Link */}
           <div className="mb-6">
@@ -80,7 +85,7 @@ const ForgotPasswordPage = () => {
 
           {/* Footer */}
           <div className="text-center mt-8 text-gray-500 text-sm">
-            <p>© 2024 InfraXpert. All rights reserved.</p>
+            <p>© 2025 InfraXpert. All rights reserved.</p>
           </div>
         </div>
       </div>
@@ -88,7 +93,7 @@ const ForgotPasswordPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-violet-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Back to Login Link */}
         <div className="mb-6">
@@ -116,6 +121,11 @@ const ForgotPasswordPage = () => {
           </CardHeader>
           
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
@@ -171,7 +181,7 @@ const ForgotPasswordPage = () => {
 
         {/* Footer */}
         <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>© 2024 InfraXpert. All rights reserved.</p>
+          <p>© 2025 InfraXpert. All rights reserved.</p>
         </div>
       </div>
     </div>
