@@ -44,12 +44,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkTokenExpiry = async () => {
       const token = getSession();
+      console.log("Checking token:", token);
 
       if (token?.accessToken && token?.refreshToken) {
+        console.log("Token found, setting authenticated to true");
         setIsAuthenticated(true);
 
         try {
           const userData = getUserDetails();
+          console.log("User data from cookie:", userData);
           if (userData) {
             setUser(userData);
             
@@ -83,8 +86,11 @@ export const AuthProvider = ({ children }) => {
             const expiryTime = exp * 1000; // Convert to milliseconds
             const timeLeft = (expiryTime - Date.now()) / 1000; // Convert to seconds
 
+            console.log("Token expires in:", timeLeft, "seconds");
+
             // Refresh token if it expires in less than 5 minutes
             if (timeLeft <= 5 * 60) {
+              console.log("Token expiring soon, refreshing...");
               const newToken = await refreshToken();
               if (newToken) {
                 setSession(newToken);
@@ -92,6 +98,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(updatedUser);
                 setRole(updatedUser?.role || "customer");
               } else {
+                console.log("Token refresh failed, logging out");
                 deleteSession();
                 navigate(getRedirectUrl(location.pathname));
               }
@@ -102,18 +109,27 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(false);
         }
       } else {
-        setIsAuthenticated(false);
+        console.log("No token found, setting authenticated to false");
+        // Only set to false if we're not already authenticated (to prevent overriding login state)
+        if (!isAuthenticated) {
+          setIsAuthenticated(false);
+        }
       }
       
       setPreLoader(false);
     };
 
-    checkTokenExpiry();
+    // Add a small delay to prevent interference with login process
+    const timeoutId = setTimeout(checkTokenExpiry, 500);
     
     // Check expiry every 5 minutes
     const intervalId = setInterval(checkTokenExpiry, 5 * 60 * 1000);
-    return () => clearInterval(intervalId);
-  }, [navigate, location.pathname]);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, [navigate, location.pathname, isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -126,12 +142,23 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (credentials) => {
     try {
+      console.log("Starting login process...");
       const response = await loginUser(credentials);
+      console.log("Login response:", response);
       
       if (response) {
+        console.log("Login successful, setting authentication state");
         setIsAuthenticated(true);
         setUser(response.user);
         setRole(response.user?.role || "customer");
+        
+        // Check if cookies were set (with a small delay to ensure they're written)
+        setTimeout(() => {
+          const token = getSession();
+          const userData = getUserDetails();
+          console.log("Token after login (delayed):", token);
+          console.log("User data after login (delayed):", userData);
+        }, 200);
         
         // Redirect to intended page or home
         const redirectUrl = new URLSearchParams(location.search).get('redirectUrl');
