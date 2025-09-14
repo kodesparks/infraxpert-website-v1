@@ -2,6 +2,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { CartProvider } from '@/contexts/CartContext'
 import MainLayout from '@/layouts/MainLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -14,13 +15,17 @@ import LoginPage from '@/pages/LoginPage'
 import SignupPage from '@/pages/SignupPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import UserProfilePage from '@/pages/UserProfilePage'
+import DeliveryDetailsPage from '@/pages/DeliveryDetailsPage'
+import PaymentPage from '@/pages/PaymentPage'
+import PlaceOrderPage from '@/pages/PlaceOrderPage'
 import './App.css'
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
+        <CartProvider>
+          <Routes>
           {/* Authentication pages - No header */}
           <Route path="/login" element={
             <AuthLayout>
@@ -73,7 +78,29 @@ function App() {
               </ProtectedRoute>
             </MainLayout>
           } />
-        </Routes>
+          <Route path="/delivery-details" element={
+            <MainLayout>
+              <ProtectedRoute>
+                <DeliveryDetailsPage />
+              </ProtectedRoute>
+            </MainLayout>
+          } />
+          <Route path="/payment" element={
+            <MainLayout>
+              <ProtectedRoute>
+                <PaymentPage />
+              </ProtectedRoute>
+            </MainLayout>
+          } />
+          <Route path="/place-order" element={
+            <MainLayout>
+              <ProtectedRoute>
+                <PlaceOrderPage />
+              </ProtectedRoute>
+            </MainLayout>
+          } />
+          </Routes>
+        </CartProvider>
       </AuthProvider>
     </Router>
   )

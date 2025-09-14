@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Menu, X, User } from 'lucide-react'
+import { Menu, X, User, ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useCart } from '@/contexts/CartContext'
+import CartDrawer from '@/components/CartDrawer'
 
 const MainLayout = ({ children }) => {
   const location = useLocation()
   const { isAuthenticated, user } = useAuth()
+  const { getTotalItems } = useCart()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
   const mobileMenuRef = useRef(null)
   const mobileButtonRef = useRef(null)
   
@@ -52,6 +56,19 @@ const MainLayout = ({ children }) => {
   useEffect(() => {
     closeMobileMenu()
   }, [location.pathname])
+
+  // Listen for custom event to open cart drawer
+  useEffect(() => {
+    const handleOpenCartDrawer = () => {
+      setIsCartOpen(true)
+    }
+
+    window.addEventListener('openCartDrawer', handleOpenCartDrawer)
+    
+    return () => {
+      window.removeEventListener('openCartDrawer', handleOpenCartDrawer)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,12 +137,18 @@ const MainLayout = ({ children }) => {
               <div className="flex items-center space-x-4">
                 {isAuthenticated ? (
                   <>
-                    <Link 
-                      to="/products" 
-                      className="bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-violet-700 transition-all duration-300 font-medium whitespace-nowrap cursor-pointer"
+                    <button
+                      onClick={() => setIsCartOpen(true)}
+                      className="relative bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-violet-700 transition-all duration-300 font-medium whitespace-nowrap cursor-pointer flex items-center space-x-2"
                     >
-                      Cart
-                    </Link>
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>Cart</span>
+                      {getTotalItems() > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {getTotalItems()}
+                        </span>
+                      )}
+                    </button>
                     <Link 
                       to="/profile" 
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 font-medium whitespace-nowrap cursor-pointer ${
@@ -238,13 +261,21 @@ const MainLayout = ({ children }) => {
               <div className="space-y-2 pt-2 border-t border-gray-200">
                 {isAuthenticated ? (
                   <>
-                    <Link 
-                      to="/products" 
-                      onClick={closeMobileMenu}
-                      className="block px-4 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-violet-700 transition-all duration-300 text-center shadow-md hover:shadow-lg"
+                    <button
+                      onClick={() => {
+                        setIsCartOpen(true)
+                        closeMobileMenu()
+                      }}
+                      className="relative w-full px-4 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-violet-700 transition-all duration-300 text-center shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
                     >
-                      Cart
-                    </Link>
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>Cart</span>
+                      {getTotalItems() > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-1">
+                          {getTotalItems()}
+                        </span>
+                      )}
+                    </button>
                     <Link 
                       to="/profile" 
                       onClick={closeMobileMenu}
@@ -287,6 +318,9 @@ const MainLayout = ({ children }) => {
       <main>
         {children}
       </main>
+
+      {/* Cart Drawer */}
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   )
 }

@@ -10,6 +10,8 @@ import {
   Star, 
   Check 
 } from 'lucide-react'
+import { useCart } from '@/contexts/CartContext'
+import { useNavigate } from 'react-router-dom'
 import cementImage from '@/assets/images/cement.jpg'
 import steelImage from '@/assets/images/steel.jpg'
 import mixerImage from '@/assets/images/mixer.jpg'
@@ -19,6 +21,8 @@ import rmcreadymixImage from '@/assets/images/rmcreadymix.png'
 const ProductsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('popular')
+  const { addToCart } = useCart()
+  const navigate = useNavigate()
 
   const categories = [
     { id: 'all', name: 'All Products', count: 12, icon: Grid3X3 },
@@ -439,7 +443,14 @@ const ProductsPage = () => {
 
                     {/* Action Buttons */}
                     <div className="flex space-x-2">
-                      <button className="flex-1 bg-blue-700 text-white py-2 px-2 sm:px-3 lg:px-4 rounded-lg font-medium hover:bg-violet-700 transition-colors cursor-pointer whitespace-nowrap text-xs sm:text-sm lg:text-base">
+                      <button 
+                        onClick={() => {
+                          addToCart(product)
+                          // Trigger cart drawer to open by dispatching a custom event
+                          window.dispatchEvent(new CustomEvent('openCartDrawer'))
+                        }}
+                        className="flex-1 bg-blue-700 text-white py-2 px-2 sm:px-3 lg:px-4 rounded-lg font-medium hover:bg-violet-700 transition-colors cursor-pointer whitespace-nowrap text-xs sm:text-sm lg:text-base"
+                      >
                         Add to Cart
                       </button>
                       <button className="px-2 sm:px-3 lg:px-4 py-2 border-2 border-blue-700 text-blue-700 rounded-lg hover:bg-blue-700 hover:text-white transition-colors cursor-pointer">
