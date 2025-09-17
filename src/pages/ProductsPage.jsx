@@ -11,7 +11,9 @@ import {
   Check,
   Loader2,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useInventory } from '@/contexts/InventoryContext'
@@ -26,6 +28,7 @@ const ProductsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('popular')
   const [searchTerm, setSearchTerm] = useState('')
+  const [productImageIndex, setProductImageIndex] = useState({}) // Track current image index for each product
   const { addToCart } = useCart()
   const navigate = useNavigate()
 
@@ -37,6 +40,7 @@ const ProductsPage = () => {
     categories,
     subcategories,
     categoriesLoading,
+    productDetails,
     updateFilters,
     changePage,
     searchItems,
@@ -80,8 +84,61 @@ const ProductsPage = () => {
     [searchItems]
   )
 
-  // Transform inventory items to products format
-  const products = transformInventoryToProducts(inventoryItems)
+  // Transform inventory items to products format with enhanced data
+  const products = inventoryItems.map(item => {
+    // Get pricing info if available
+    const pricing = productDetails[item._id]?.pricing;
+    const promos = productDetails[item._id]?.promos || [];
+    
+    // Calculate current price with any active promo
+    let currentPrice = pricing?.unitPrice || 0;
+    let originalPrice = currentPrice;
+    let discount = 0;
+    
+    if (promos.length > 0) {
+      const activePromo = promos.find(promo => promo.isActive);
+      if (activePromo) {
+        if (activePromo.discountType === 'percentage') {
+          discount = activePromo.discountValue;
+          currentPrice = originalPrice * (1 - discount / 100);
+        } else if (activePromo.discountType === 'fixed') {
+          discount = (activePromo.discountValue / originalPrice) * 100;
+          currentPrice = originalPrice - activePromo.discountValue;
+        }
+      }
+    }
+
+    return {
+      id: item._id,
+      name: item.itemDescription,
+      category: item.category.toLowerCase().replace(' ', '-'),
+      brand: item.vendorId?.name || 'Unknown',
+      image: item.primaryImage || '/placeholder-image.jpg',
+      images: item.images || [], // All images for slideshow
+      discount: Math.round(discount),
+      originalPrice: Math.round(originalPrice),
+      currentPrice: Math.round(currentPrice),
+      unit: `/${item.units.toLowerCase()}`,
+      rating: 4.5, // Default rating since not provided in API
+      reviews: Math.floor(Math.random() * 1000) + 100, // Random reviews since not provided
+      features: [
+        item.grade || 'Premium Grade',
+        item.specification || 'Quality Assured',
+        item.deliveryInformation || 'Fast Delivery'
+      ],
+      inStock: item.isActive,
+      // Additional API data
+      itemCode: item.itemCode,
+      formattedItemCode: item.formattedItemCode,
+      subCategory: item.subCategory,
+      details: item.details,
+      deliveryInformation: item.deliveryInformation,
+      hscCode: item.hscCode,
+      vendorId: item.vendorId,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    };
+  })
 
   // Filter products based on selected category
   const filteredProducts = selectedCategory === 'all' 
@@ -112,11 +169,40 @@ const ProductsPage = () => {
     refreshData()
   }
 
+  // Handle image navigation
+  const handleImageNavigation = (productId, direction) => {
+    const product = products.find(p => p.id === productId)
+    if (!product || !product.images || product.images.length <= 1) return
+
+    const currentIndex = productImageIndex[productId] || 0
+    let newIndex = currentIndex
+
+    if (direction === 'prev') {
+      newIndex = currentIndex === 0 ? product.images.length - 1 : currentIndex - 1
+    } else if (direction === 'next') {
+      newIndex = currentIndex === product.images.length - 1 ? 0 : currentIndex + 1
+    }
+
+    setProductImageIndex(prev => ({
+      ...prev,
+      [productId]: newIndex
+    }))
+  }
+
+  // Get current image for a product
+  const getCurrentImage = (product) => {
+    if (!product.images || product.images.length === 0) {
+      return product.image
+    }
+    const currentIndex = productImageIndex[product.id] || 0
+    return product.images[currentIndex]?.url || product.image
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         {/* Header - Fixed mobile stacking issue */}
-        <div className="mb-6 sm:mb-8">
+        {/* <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div className="text-center sm:text-left mb-4 sm:mb-0">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-2 sm:mb-4">
@@ -127,7 +213,6 @@ const ProductsPage = () => {
             </p>
           </div>
             
-            {/* Refresh Button */}
             <div className="flex justify-center sm:justify-end">
               <button
                 onClick={handleRefresh}
@@ -140,7 +225,6 @@ const ProductsPage = () => {
             </div>
           </div>
           
-          {/* Error Message */}
           {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
               <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
@@ -150,7 +234,7 @@ const ProductsPage = () => {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
 
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
           {/* Mobile Categories - Improved mobile layout */}
@@ -239,45 +323,12 @@ const ProductsPage = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Search Bar */}
-            <div className="mb-4 sm:mb-6">
-              <div className="relative max-w-md mx-auto sm:mx-0">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  disabled={loading}
-                  className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                  onMouseEnter={(e) => e.target.focus()}
-                  onMouseLeave={(e) => e.target.blur()}
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                {searchTerm && (
-                  <button
-                    onClick={() => {
-                      setSearchTerm('')
-                      searchItems('')
-                    }}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Product Count and Sort - Improved mobile layout */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
-              <div className="text-gray-600 text-sm sm:text-base text-center sm:text-left">
+            {/* Search, Sort and Product Count - Single Row */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-4 sm:mb-6 gap-3 lg:gap-4">
+              {/* Left side - Product Count */}
+              <div className="text-gray-600 text-sm sm:text-base text-center lg:text-left">
                 {loading ? (
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-center lg:justify-start">
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     Loading products...
                   </div>
@@ -285,19 +336,56 @@ const ProductsPage = () => {
                   `Showing ${filteredProducts.length} of ${pagination.totalItems} products`
                 )}
               </div>
-              <div className="flex items-center justify-center sm:justify-end">
-                <select 
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  disabled={loading}
-                  className="border border-gray-300 rounded-lg px-3 sm:px-4 py-2 bg-white text-gray-700 pr-8 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="popular">Sort by: Popular</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="rating">Rating</option>
-                  <option value="newest">Newest</option>
-                </select>
+              
+              {/* Right side - Search and Sort */}
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-64">
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    disabled={loading}
+                    className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    onMouseEnter={(e) => e.target.focus()}
+                    onMouseLeave={(e) => e.target.blur()}
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  {searchTerm && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm('')
+                        searchItems('')
+                      }}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Sort Dropdown */}
+                <div className="w-full sm:w-auto">
+                  <select 
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    disabled={loading}
+                    className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-700 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="popular">Sort by: Popular</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="rating">Rating</option>
+                    <option value="newest">Newest</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -335,20 +423,60 @@ const ProductsPage = () => {
                   key={product.id} 
                   className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer"
                 >
-                  {/* Product Image */}
+                  {/* Product Image with Slideshow */}
                   <div className="relative overflow-hidden">
                     <img 
                       alt={product.name} 
-                      className="w-full h-32 sm:h-40 lg:h-48 object-cover object-top group-hover:scale-110 transition-transform duration-300" 
-                      src={product.image}
+                      className="w-full h-32 sm:h-36 lg:h-40 object-cover object-center group-hover:scale-110 transition-transform duration-300" 
+                      src={getCurrentImage(product)}
                     />
                     
+                    {/* Image Navigation Arrows */}
+                    {product.images && product.images.length > 1 && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleImageNavigation(product.id, 'prev')
+                          }}
+                          className="absolute left-2 top-1/2 transform -translate-y-1/2 w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
+                        >
+                          <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleImageNavigation(product.id, 'next')
+                          }}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
+                        >
+                          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                        
+                        {/* Image Indicators */}
+                        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                          {product.images.map((_, index) => (
+                            <div
+                              key={index}
+                              className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                                (productImageIndex[product.id] || 0) === index
+                                  ? 'bg-white'
+                                  : 'bg-white/50'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    
                     {/* Discount Badge */}
-                    <div className="absolute top-2 sm:top-3 lg:top-4 left-2 sm:left-3 lg:left-4">
-                      <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                        {product.discount}% OFF
-                      </span>
-                    </div>
+                    {product.discount > 0 && (
+                      <div className="absolute top-2 sm:top-3 lg:top-4 left-2 sm:left-3 lg:left-4">
+                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          {product.discount}% OFF
+                        </span>
+                      </div>
+                    )}
                     
                     {/* Wishlist Icon */}
                     <div className="absolute top-2 sm:top-3 lg:top-4 right-2 sm:right-3 lg:right-4">
@@ -359,10 +487,10 @@ const ProductsPage = () => {
                   </div>
 
                   {/* Product Details */}
-                  <div className="p-3 sm:p-4 lg:p-6">
+                  <div className="p-3 sm:p-4 lg:p-5">
                     {/* Brand and Stock Status */}
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs sm:text-sm font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                      <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded">
                         {product.brand}
                       </span>
                       <span className={`text-xs px-2 py-1 rounded ${
@@ -375,49 +503,67 @@ const ProductsPage = () => {
                     </div>
 
                     {/* Product Name */}
-                    <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-800 mb-2 sm:mb-3 group-hover:text-blue-700 transition-colors line-clamp-2">
+                    <h3 className="text-sm font-bold text-gray-800 mb-2 group-hover:text-blue-700 transition-colors line-clamp-1">
                       {product.name}
                     </h3>
 
-                    {/* Rating */}
-                    <div className="flex items-center mb-2 sm:mb-3">
-                      <div className="flex items-center">
-                        <div className="flex items-center justify-center w-3 h-3 sm:w-4 sm:h-4 mr-1">
-                          <Star className="text-yellow-400 text-xs sm:text-sm fill-current" />
+                    {/* Item Code and Subcategory in one line */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs text-gray-500">
+                        {product.formattedItemCode}
+                      </div>
+                      {product.subCategory && (
+                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          {product.subCategory}
                         </div>
-                        <span className="text-xs sm:text-sm font-medium text-gray-700 mr-2">
+                      )}
+                    </div>
+
+                    {/* Rating */}
+                    <div className="flex items-center mb-2">
+                      <div className="flex items-center">
+                        <div className="flex items-center justify-center w-3 h-3 mr-1">
+                          <Star className="text-yellow-400 text-xs fill-current" />
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 mr-1">
                           {product.rating}
                         </span>
-                        <span className="text-xs text-gray-500 hidden sm:inline">
-                          ({product.reviews} reviews)
-                        </span>
-                        <span className="text-xs text-gray-500 sm:hidden">
+                        <span className="text-xs text-gray-500">
                           ({product.reviews})
                         </span>
                       </div>
                     </div>
 
-                    {/* Features */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 mb-3 sm:mb-4">
-                      {product.features.map((feature, index) => (
-                        <div key={index} className="flex items-center text-xs text-gray-600">
-                          <div className="flex items-center justify-center w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1.5 sm:mr-2">
-                            <Check className="text-green-500 w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    {/* Features - Show only first 2 */}
+                    <div className="mb-3">
+                      {product.features.slice(0, 2).map((feature, index) => (
+                        <div key={index} className="flex items-center text-xs text-gray-600 mb-1">
+                          <div className="flex items-center justify-center w-2.5 h-2.5 mr-1">
+                            <Check className="text-green-500 w-2.5 h-2.5" />
                           </div>
                           <span className="truncate">{feature}</span>
                         </div>
                       ))}
                     </div>
 
+                    {/* Delivery Information - Compact */}
+                    {product.deliveryInformation && (
+                      <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded mb-3">
+                        🚚 {product.deliveryInformation.length > 20 ? product.deliveryInformation.substring(0, 20) + '...' : product.deliveryInformation}
+                      </div>
+                    )}
+
                     {/* Pricing */}
-                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
-                        <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
+                        <div className="text-sm font-bold text-gray-800">
                           ₹{product.currentPrice.toLocaleString()}{product.unit}
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-500 line-through">
-                          ₹{product.originalPrice.toLocaleString()}{product.unit}
-                        </div>
+                        {product.originalPrice > product.currentPrice && (
+                          <div className="text-xs text-gray-500 line-through">
+                            ₹{product.originalPrice.toLocaleString()}{product.unit}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -429,13 +575,13 @@ const ProductsPage = () => {
                           // Trigger cart drawer to open by dispatching a custom event
                           window.dispatchEvent(new CustomEvent('openCartDrawer'))
                         }}
-                        className="flex-1 bg-blue-700 text-white py-2 px-2 sm:px-3 lg:px-4 rounded-lg font-medium hover:bg-violet-700 transition-colors cursor-pointer whitespace-nowrap text-xs sm:text-sm lg:text-base"
+                        className="flex-1 bg-blue-700 text-white py-2 px-3 rounded-lg font-medium hover:bg-violet-700 transition-colors cursor-pointer text-sm"
                       >
                         Add to Cart
                       </button>
-                      <button className="px-2 sm:px-3 lg:px-4 py-2 border-2 border-blue-700 text-blue-700 rounded-lg hover:bg-blue-700 hover:text-white transition-colors cursor-pointer">
-                        <div className="flex items-center justify-center w-3 h-3 sm:w-4 sm:h-4">
-                          <Eye className="text-xs sm:text-sm lg:text-base" />
+                      <button className="px-3 py-2 border-2 border-blue-700 text-blue-700 rounded-lg hover:bg-blue-700 hover:text-white transition-colors cursor-pointer">
+                        <div className="flex items-center justify-center w-4 h-4">
+                          <Eye className="text-sm" />
                         </div>
                       </button>
                     </div>
