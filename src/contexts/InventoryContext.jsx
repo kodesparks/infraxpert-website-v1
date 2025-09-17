@@ -215,12 +215,49 @@ export const InventoryProvider = ({ children }) => {
     loadActivePromos();
   }, [loadInventoryItems, loadCategories, loadActivePromos]);
 
-  // Load initial data
+  // Load initial data - only once on mount
   useEffect(() => {
-    loadInventoryItems();
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await getInventoryItems({
+          page: 1,
+          limit: 20,
+          isActive: true
+        });
+        
+        setInventoryItems(response.inventory || []);
+        setPagination(response.pagination || {
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 0,
+          hasNext: false,
+          hasPrev: false
+        });
+        
+        setFilters({
+          page: 1,
+          limit: 20,
+          category: '',
+          subCategory: '',
+          search: '',
+          isActive: true
+        });
+      } catch (err) {
+        console.error('Error loading initial inventory items:', err);
+        setError(err.message || 'Failed to load inventory items');
+        setInventoryItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
     loadCategories();
     loadActivePromos();
-  }, []);
+  }, []); // Empty dependency array - only run once on mount
 
   // Load subcategories when category changes
   useEffect(() => {

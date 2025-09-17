@@ -25,8 +25,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <InventoryProvider>
-          <CartProvider>
+        <CartProvider>
           <Routes>
           {/* Authentication pages - No header */}
           <Route path="/login" element={
@@ -54,7 +53,9 @@ function App() {
           <Route path="/products" element={
             <MainLayout>
               <ProtectedRoute>
-                <ProductsPage />
+                <InventoryProvider>
+                  <ProductsPage />
+                </InventoryProvider>
               </ProtectedRoute>
             </MainLayout>
           } />
@@ -102,8 +103,7 @@ function App() {
             </MainLayout>
           } />
           </Routes>
-          </CartProvider>
-        </InventoryProvider>
+        </CartProvider>
       </AuthProvider>
     </Router>
   )
