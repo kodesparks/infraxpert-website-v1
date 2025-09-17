@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { 
   Grid3X3, 
   Building, 
@@ -8,9 +8,13 @@ import {
   Heart, 
   Eye, 
   Star, 
-  Check 
+  Check,
+  Loader2,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
+import { useInventory } from '@/contexts/InventoryContext'
 import { useNavigate } from 'react-router-dom'
 import cementImage from '@/assets/images/cement.jpg'
 import steelImage from '@/assets/images/steel.jpg'
@@ -21,211 +25,91 @@ import rmcreadymixImage from '@/assets/images/rmcreadymix.png'
 const ProductsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('popular')
+  const [searchTerm, setSearchTerm] = useState('')
   const { addToCart } = useCart()
   const navigate = useNavigate()
 
-  const categories = [
-    { id: 'all', name: 'All Products', count: 12, icon: Grid3X3 },
-    { id: 'cement', name: 'Cement', count: 4, icon: Building },
-    { id: 'steel', name: 'Steel & TMT', count: 4, icon: Hammer },
-    { id: 'concrete', name: 'Concrete Mix', count: 4, icon: Truck }
+  const {
+    inventoryItems,
+    loading,
+    error,
+    pagination,
+    categories,
+    subcategories,
+    categoriesLoading,
+    updateFilters,
+    changePage,
+    searchItems,
+    filterByCategory,
+    filterBySubcategory,
+    clearFilters,
+    refreshData,
+    transformInventoryToProducts
+  } = useInventory()
+
+  // Calculate real category counts from inventory items
+  const getCategoryCount = useCallback((categoryName) => {
+    if (categoryName === 'all') return pagination.totalItems
+    return inventoryItems.filter(item => item.category === categoryName).length
+  }, [inventoryItems, pagination.totalItems])
+
+  // Transform API categories to match the existing structure with real counts
+  const transformedCategories = [
+    { id: 'all', name: 'All Products', count: getCategoryCount('all'), icon: Grid3X3 },
+    ...Object.keys(categories).map(categoryName => ({
+      id: categoryName.toLowerCase().replace(' ', '-'),
+      name: categoryName,
+      count: getCategoryCount(categoryName),
+      icon: categoryName === 'Cement' ? Building : 
+            categoryName === 'Iron' ? Hammer : 
+            categoryName === 'Concrete Mixer' ? Truck : Grid3X3
+    }))
   ]
 
-  const products = [
-    // Cement Products
-    {
-      id: 1,
-      name: 'UltraTech Cement OPC 53',
-      category: 'cement',
-      brand: 'UltraTech',
-      image: cementImage,
-      discount: 8,
-      originalPrice: 420,
-      currentPrice: 385,
-      unit: '/bag',
-      rating: 4.8,
-      reviews: 2847,
-      features: ['53 Grade OPC', 'ISI Certified'],
-      inStock: true
-    },
-    {
-      id: 2,
-      name: 'ACC Cement PPC',
-      category: 'cement',
-      brand: 'ACC',
-      image: cementImage,
-      discount: 8,
-      originalPrice: 395,
-      currentPrice: 362,
-      unit: '/bag',
-      rating: 4.7,
-      reviews: 1923,
-      features: ['PPC Grade', 'Eco-Friendly'],
-      inStock: true
-    },
-    {
-      id: 3,
-      name: 'Ambuja Cement Plus',
-      category: 'cement',
-      brand: 'Ambuja',
-      image: cementImage,
-      discount: 7,
-      originalPrice: 405,
-      currentPrice: 375,
-      unit: '/bag',
-      rating: 4.6,
-      reviews: 1654,
-      features: ['Premium Grade', 'Weather Resistant'],
-      inStock: true
-    },
-    {
-      id: 4,
-      name: 'Shree Cement Ultra',
-      category: 'cement',
-      brand: 'Shree Cement',
-      image: cementImage,
-      discount: 8,
-      originalPrice: 398,
-      currentPrice: 368,
-      unit: '/bag',
-      rating: 4.5,
-      reviews: 987,
-      features: ['Ultra Grade', 'High Durability'],
-      inStock: true
-    },
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    (() => {
+      let timeoutId
+      return (term) => {
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => {
+          searchItems(term)
+        }, 900) // 500ms delay
+      }
+    })(),
+    [searchItems]
+  )
 
-    // Steel Products
-    {
-      id: 5,
-      name: 'TATA Steel TMT Bars',
-      category: 'steel',
-      brand: 'TATA Steel',
-      image: steelImage,
-      discount: 5,
-      originalPrice: 72000,
-      currentPrice: 68500,
-      unit: '/ton',
-      rating: 4.9,
-      reviews: 3421,
-      features: ['Fe 550D Grade', 'Earthquake Resistant'],
-      inStock: true
-    },
-    {
-      id: 6,
-      name: 'JSW Steel Neo TMT',
-      category: 'steel',
-      brand: 'JSW Steel',
-      image: steelImage,
-      discount: 6,
-      originalPrice: 71500,
-      currentPrice: 67200,
-      unit: '/ton',
-      rating: 4.8,
-      reviews: 2876,
-      features: ['Neo Technology', 'High Tensile Strength'],
-      inStock: true
-    },
-    {
-      id: 7,
-      name: 'SAIL Steel TMT Bars',
-      category: 'steel',
-      brand: 'SAIL',
-      image: steelImage,
-      discount: 5,
-      originalPrice: 70200,
-      currentPrice: 66800,
-      unit: '/ton',
-      rating: 4.7,
-      reviews: 2154,
-      features: ['Government Brand', 'Fe 500D Grade'],
-      inStock: true
-    },
-    {
-      id: 8,
-      name: 'Jindal Steel Panther TMT',
-      category: 'steel',
-      brand: 'Jindal Steel',
-      image: steelImage,
-      discount: 6,
-      originalPrice: 71800,
-      currentPrice: 67800,
-      unit: '/ton',
-      rating: 4.6,
-      reviews: 1876,
-      features: ['Panther Grade', 'Superior Ductility'],
-      inStock: true
-    },
+  // Transform inventory items to products format
+  const products = transformInventoryToProducts(inventoryItems)
 
-    // Concrete Mix Products
-    {
-      id: 9,
-      name: 'UltraTech Ready Mix M25',
-      category: 'concrete',
-      brand: 'UltraTech',
-      image: rmcreadymixImage,
-      discount: 7,
-      originalPrice: 4500,
-      currentPrice: 4200,
-      unit: '/cubic meter',
-      rating: 4.8,
-      reviews: 1432,
-      features: ['M25 Grade', 'Site Delivery'],
-      inStock: true
-    },
-    {
-      id: 10,
-      name: 'ACC RMC Premium',
-      category: 'concrete',
-      brand: 'ACC',
-      image: rmcreadymixImage,
-      discount: 6,
-      originalPrice: 4400,
-      currentPrice: 4150,
-      unit: '/cubic meter',
-      rating: 4.7,
-      reviews: 987,
-      features: ['Premium Grade', 'Customizable'],
-      inStock: true
-    },
-    {
-      id: 11,
-      name: 'Ambuja Kawach Concrete',
-      category: 'concrete',
-      brand: 'Ambuja',
-      image: rmcreadymixImage,
-      discount: 7,
-      originalPrice: 4600,
-      currentPrice: 4300,
-      unit: '/cubic meter',
-      rating: 4.6,
-      reviews: 743,
-      features: ['Kawach Technology', 'Weather Resistant'],
-      inStock: true
-    },
-    {
-      id: 12,
-      name: 'RMC Readymix Supreme',
-      category: 'concrete',
-      brand: 'RMC Readymix',
-      image: rmcreadymixImage,
-      discount: 7,
-      originalPrice: 4350,
-      currentPrice: 4050,
-      unit: '/cubic meter',
-      rating: 4.5,
-      reviews: 654,
-      features: ['Supreme Quality', 'Cost Effective'],
-      inStock: true
-    }
-  ]
-
+  // Filter products based on selected category
   const filteredProducts = selectedCategory === 'all' 
     ? products 
     : products.filter(product => product.category === selectedCategory)
 
-  const getCategoryCount = (categoryId) => {
-    if (categoryId === 'all') return products.length
-    return products.filter(product => product.category === categoryId).length
+  // Handle category selection
+  const handleCategorySelect = (categoryId) => {
+    setSelectedCategory(categoryId)
+    if (categoryId === 'all') {
+      updateFilters({ category: '', subCategory: '' })
+    } else {
+      const categoryName = transformedCategories.find(cat => cat.id === categoryId)?.name
+      if (categoryName) {
+        filterByCategory(categoryName)
+      }
+    }
+  }
+
+  // Handle search with debouncing
+  const handleSearch = (term) => {
+    setSearchTerm(term)
+    debouncedSearch(term)
+  }
+
+  // Handle refresh
+  const handleRefresh = () => {
+    refreshData()
   }
 
   return (
@@ -233,7 +117,8 @@ const ProductsPage = () => {
       <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         {/* Header - Fixed mobile stacking issue */}
         <div className="mb-6 sm:mb-8">
-          <div className="text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-center sm:text-left mb-4 sm:mb-0">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-2 sm:mb-4">
               Construction Materials
             </h1>
@@ -241,20 +126,45 @@ const ProductsPage = () => {
               Premium quality construction materials from India's most trusted brands
             </p>
           </div>
+            
+            {/* Refresh Button */}
+            <div className="flex justify-center sm:justify-end">
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="flex items-center px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
+          
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
+              <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
+              <div>
+                <h3 className="text-sm font-medium text-red-800">Error loading products</h3>
+                <p className="text-sm text-red-600 mt-1">{error}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
           {/* Mobile Categories - Improved mobile layout */}
           <div className="lg:hidden">
             <div className="flex space-x-2 sm:space-x-3 overflow-x-auto pb-4 scrollbar-hide">
-              {categories.map(category => {
+              {transformedCategories.map(category => {
                 const Icon = category.icon
                 const isActive = selectedCategory === category.id
                 return (
                   <button
                     key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`flex-shrink-0 flex items-center px-3 sm:px-4 py-2 rounded-full font-medium transition-all duration-200 cursor-pointer whitespace-nowrap text-xs sm:text-sm ${
+                    onClick={() => handleCategorySelect(category.id)}
+                    disabled={loading}
+                    className={`flex-shrink-0 flex items-center px-3 sm:px-4 py-2 rounded-full font-medium transition-all duration-200 cursor-pointer whitespace-nowrap text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                       isActive 
                         ? 'bg-blue-700 text-white shadow-md' 
                         : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-200'
@@ -270,7 +180,7 @@ const ProductsPage = () => {
                         ? 'bg-white/20 text-white' 
                         : 'bg-gray-200 text-gray-600'
                     }`}>
-                      {getCategoryCount(category.id)}
+                      {category.count}
                     </span>
                   </button>
                 )
@@ -282,14 +192,15 @@ const ProductsPage = () => {
           <div className="hidden lg:block w-80 bg-white rounded-xl shadow-lg p-6 h-fit sticky top-24">
             <h3 className="text-xl font-bold text-gray-800 mb-6">Categories</h3>
             <div className="space-y-2">
-              {categories.map(category => {
+              {transformedCategories.map(category => {
                 const Icon = category.icon
                 const isActive = selectedCategory === category.id
                 return (
                   <button
                     key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`w-full flex items-center p-4 rounded-lg font-medium transition-all duration-200 cursor-pointer ${
+                    onClick={() => handleCategorySelect(category.id)}
+                    disabled={loading}
+                    className={`w-full flex items-center p-4 rounded-lg font-medium transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                       isActive 
                         ? 'bg-blue-700 text-white shadow-md' 
                         : 'bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700'
@@ -304,7 +215,7 @@ const ProductsPage = () => {
                         ? 'bg-white/20 text-white' 
                         : 'bg-gray-200 text-gray-600'
                     }`}>
-                      {getCategoryCount(category.id)}
+                      {category.count}
                     </span>
                   </button>
                 )
@@ -328,16 +239,58 @@ const ProductsPage = () => {
 
           {/* Main Content */}
           <div className="flex-1">
+            {/* Search Bar */}
+            <div className="mb-4 sm:mb-6">
+              <div className="relative max-w-md mx-auto sm:mx-0">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  disabled={loading}
+                  className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  onMouseEnter={(e) => e.target.focus()}
+                  onMouseLeave={(e) => e.target.blur()}
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('')
+                      searchItems('')
+                    }}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Product Count and Sort - Improved mobile layout */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
               <div className="text-gray-600 text-sm sm:text-base text-center sm:text-left">
-                Showing {filteredProducts.length} products
+                {loading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Loading products...
+                  </div>
+                ) : (
+                  `Showing ${filteredProducts.length} of ${pagination.totalItems} products`
+                )}
               </div>
               <div className="flex items-center justify-center sm:justify-end">
                 <select 
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 sm:px-4 py-2 bg-white text-gray-700 pr-8 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                  className="border border-gray-300 rounded-lg px-3 sm:px-4 py-2 bg-white text-gray-700 pr-8 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="popular">Sort by: Popular</option>
                   <option value="price-low">Price: Low to High</option>
@@ -349,6 +302,33 @@ const ProductsPage = () => {
             </div>
 
             {/* Products Grid - Improved mobile responsiveness */}
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-700" />
+                  <p className="text-gray-600">Loading products...</p>
+                </div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                  <p className="text-gray-600 mb-4">
+                    {selectedCategory === 'all' 
+                      ? 'No products are available at the moment.' 
+                      : `No products found in the ${transformedCategories.find(cat => cat.id === selectedCategory)?.name || 'selected'} category.`
+                    }
+                  </p>
+                  <button
+                    onClick={clearFilters}
+                    className="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               {filteredProducts.map(product => (
                 <div 
@@ -463,6 +443,48 @@ const ProductsPage = () => {
                 </div>
               ))}
             </div>
+            )}
+            
+            {/* Pagination */}
+            {!loading && filteredProducts.length > 0 && pagination.totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => changePage(pagination.currentPage - 1)}
+                  disabled={!pagination.hasPrev || loading}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => changePage(pageNum)}
+                        disabled={loading}
+                        className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                          pagination.currentPage === pageNum
+                            ? 'bg-blue-700 text-white'
+                            : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => changePage(pagination.currentPage + 1)}
+                  disabled={!pagination.hasNext || loading}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

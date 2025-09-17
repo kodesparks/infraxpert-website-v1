@@ -3,6 +3,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CartProvider } from '@/contexts/CartContext'
+import { InventoryProvider } from '@/contexts/InventoryContext'
 import MainLayout from '@/layouts/MainLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -24,7 +25,8 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <CartProvider>
+        <InventoryProvider>
+          <CartProvider>
           <Routes>
           {/* Authentication pages - No header */}
           <Route path="/login" element={
@@ -100,7 +102,8 @@ function App() {
             </MainLayout>
           } />
           </Routes>
-        </CartProvider>
+          </CartProvider>
+        </InventoryProvider>
       </AuthProvider>
     </Router>
   )
