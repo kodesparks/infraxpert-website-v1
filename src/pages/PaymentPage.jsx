@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, CreditCard, Smartphone, Wallet, CheckCircle, MapPin, Calendar, Phone, Mail, User } from 'lucide-react'
+import { ArrowLeft, CreditCard, Smartphone, Wallet, CheckCircle, MapPin, Calendar, Phone, Mail, User, Building2, Banknote, Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -18,7 +18,14 @@ const PaymentPage = () => {
     cvv: '',
     cardName: '',
     upiId: '',
-    walletType: ''
+    walletType: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    accountHolderName: '',
+    transactionId: '',
+    chequeNumber: '',
+    ddNumber: ''
   })
   const [errors, setErrors] = useState({})
   const [isProcessing, setIsProcessing] = useState(false)
@@ -52,6 +59,30 @@ const PaymentPage = () => {
       name: 'Digital Wallet',
       icon: Wallet,
       description: 'Pay using digital wallets'
+    },
+    {
+      id: 'rtgs',
+      name: 'RTGS Transfer',
+      icon: Building2,
+      description: 'Real Time Gross Settlement (₹2 lakhs+)'
+    },
+    {
+      id: 'neft',
+      name: 'NEFT Transfer',
+      icon: Banknote,
+      description: 'National Electronic Funds Transfer'
+    },
+    {
+      id: 'cheque',
+      name: 'Cheque Payment',
+      icon: Receipt,
+      description: 'Pay via cheque (subject to clearance)'
+    },
+    {
+      id: 'dd',
+      name: 'Demand Draft',
+      icon: Receipt,
+      description: 'Pay via demand draft'
     }
   ]
 
@@ -64,7 +95,14 @@ const PaymentPage = () => {
       cvv: '',
       cardName: '',
       upiId: '',
-      walletType: ''
+      walletType: '',
+      bankName: '',
+      accountNumber: '',
+      ifscCode: '',
+      accountHolderName: '',
+      transactionId: '',
+      chequeNumber: '',
+      ddNumber: ''
     })
   }
 
@@ -130,6 +168,46 @@ const PaymentPage = () => {
       }
     }
 
+    if (selectedPaymentMethod === 'rtgs' || selectedPaymentMethod === 'neft') {
+      if (!paymentData.bankName) {
+        newErrors.bankName = 'Bank name is required'
+      }
+      if (!paymentData.accountNumber) {
+        newErrors.accountNumber = 'Account number is required'
+      } else if (!/^\d{9,18}$/.test(paymentData.accountNumber)) {
+        newErrors.accountNumber = 'Please enter a valid account number'
+      }
+      if (!paymentData.ifscCode) {
+        newErrors.ifscCode = 'IFSC code is required'
+      } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(paymentData.ifscCode.toUpperCase())) {
+        newErrors.ifscCode = 'Please enter a valid IFSC code'
+      }
+      if (!paymentData.accountHolderName) {
+        newErrors.accountHolderName = 'Account holder name is required'
+      }
+      if (!paymentData.transactionId) {
+        newErrors.transactionId = 'Transaction ID is required'
+      }
+    }
+
+    if (selectedPaymentMethod === 'cheque') {
+      if (!paymentData.chequeNumber) {
+        newErrors.chequeNumber = 'Cheque number is required'
+      }
+      if (!paymentData.bankName) {
+        newErrors.bankName = 'Bank name is required'
+      }
+    }
+
+    if (selectedPaymentMethod === 'dd') {
+      if (!paymentData.ddNumber) {
+        newErrors.ddNumber = 'DD number is required'
+      }
+      if (!paymentData.bankName) {
+        newErrors.bankName = 'Bank name is required'
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -186,10 +264,9 @@ const PaymentPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Payment Methods */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Payment Method Selection */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+          {/* Left Side - Payment Methods */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg p-6 shadow-sm sticky top-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Select Payment Method</h2>
               
               <div className="space-y-3">
@@ -201,7 +278,7 @@ const PaymentPage = () => {
                     <div
                       key={method.id}
                       onClick={() => handlePaymentMethodChange(method.id)}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
                         isSelected
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
@@ -211,11 +288,11 @@ const PaymentPage = () => {
                         <div className={`p-2 rounded-lg ${
                           isSelected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
                         }`}>
-                          <Icon className="w-5 h-5" />
+                          <Icon className="w-4 h-4" />
                         </div>
-                        <div>
-                          <h3 className="font-medium text-gray-800">{method.name}</h3>
-                          <p className="text-sm text-gray-600">{method.description}</p>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-800 text-sm">{method.name}</h3>
+                          <p className="text-xs text-gray-600">{method.description}</p>
                         </div>
                       </div>
                     </div>
@@ -227,7 +304,10 @@ const PaymentPage = () => {
                 <p className="text-red-500 text-sm mt-2">{errors.paymentMethod}</p>
               )}
             </div>
+          </div>
 
+          {/* Right Side - Payment Details and Order Summary */}
+          <div className="lg:col-span-2 space-y-6">
             {/* Payment Form */}
             {selectedPaymentMethod && (
               <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -348,12 +428,199 @@ const PaymentPage = () => {
                     )}
                   </div>
                 )}
+
+                {(selectedPaymentMethod === 'rtgs' || selectedPaymentMethod === 'neft') && (
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-blue-800 mb-2">Bank Transfer Details</h3>
+                      <p className="text-sm text-blue-700">
+                        {selectedPaymentMethod === 'rtgs' 
+                          ? 'RTGS is available for amounts ₹2 lakhs and above. Transfer will be processed in real-time.'
+                          : 'NEFT transfers are processed in batches throughout the day.'
+                        }
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Bank Name *
+                        </label>
+                        <Input
+                          name="bankName"
+                          value={paymentData.bankName}
+                          onChange={handleInputChange}
+                          placeholder="Enter bank name"
+                          className={errors.bankName ? 'border-red-500' : ''}
+                        />
+                        {errors.bankName && (
+                          <p className="text-red-500 text-sm mt-1">{errors.bankName}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Account Number *
+                        </label>
+                        <Input
+                          name="accountNumber"
+                          value={paymentData.accountNumber}
+                          onChange={handleInputChange}
+                          placeholder="Enter account number"
+                          className={errors.accountNumber ? 'border-red-500' : ''}
+                        />
+                        {errors.accountNumber && (
+                          <p className="text-red-500 text-sm mt-1">{errors.accountNumber}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          IFSC Code *
+                        </label>
+                        <Input
+                          name="ifscCode"
+                          value={paymentData.ifscCode}
+                          onChange={handleInputChange}
+                          placeholder="e.g., SBIN0001234"
+                          className={errors.ifscCode ? 'border-red-500' : ''}
+                        />
+                        {errors.ifscCode && (
+                          <p className="text-red-500 text-sm mt-1">{errors.ifscCode}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Account Holder Name *
+                        </label>
+                        <Input
+                          name="accountHolderName"
+                          value={paymentData.accountHolderName}
+                          onChange={handleInputChange}
+                          placeholder="Enter account holder name"
+                          className={errors.accountHolderName ? 'border-red-500' : ''}
+                        />
+                        {errors.accountHolderName && (
+                          <p className="text-red-500 text-sm mt-1">{errors.accountHolderName}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Transaction ID *
+                      </label>
+                      <Input
+                        name="transactionId"
+                        value={paymentData.transactionId}
+                        onChange={handleInputChange}
+                        placeholder="Enter transaction ID from your bank"
+                        className={errors.transactionId ? 'border-red-500' : ''}
+                      />
+                      {errors.transactionId && (
+                        <p className="text-red-500 text-sm mt-1">{errors.transactionId}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {selectedPaymentMethod === 'cheque' && (
+                  <div className="space-y-4">
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-yellow-800 mb-2">Cheque Payment</h3>
+                      <p className="text-sm text-yellow-700">
+                        Please ensure the cheque is drawn in favor of our company name. 
+                        Order will be processed only after cheque clearance.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Cheque Number *
+                        </label>
+                        <Input
+                          name="chequeNumber"
+                          value={paymentData.chequeNumber}
+                          onChange={handleInputChange}
+                          placeholder="Enter cheque number"
+                          className={errors.chequeNumber ? 'border-red-500' : ''}
+                        />
+                        {errors.chequeNumber && (
+                          <p className="text-red-500 text-sm mt-1">{errors.chequeNumber}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Bank Name *
+                        </label>
+                        <Input
+                          name="bankName"
+                          value={paymentData.bankName}
+                          onChange={handleInputChange}
+                          placeholder="Enter bank name"
+                          className={errors.bankName ? 'border-red-500' : ''}
+                        />
+                        {errors.bankName && (
+                          <p className="text-red-500 text-sm mt-1">{errors.bankName}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedPaymentMethod === 'dd' && (
+                  <div className="space-y-4">
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-green-800 mb-2">Demand Draft Payment</h3>
+                      <p className="text-sm text-green-700">
+                        Please ensure the DD is drawn in favor of our company name. 
+                        Order will be processed upon receipt of the DD.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          DD Number *
+                        </label>
+                        <Input
+                          name="ddNumber"
+                          value={paymentData.ddNumber}
+                          onChange={handleInputChange}
+                          placeholder="Enter DD number"
+                          className={errors.ddNumber ? 'border-red-500' : ''}
+                        />
+                        {errors.ddNumber && (
+                          <p className="text-red-500 text-sm mt-1">{errors.ddNumber}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Bank Name *
+                        </label>
+                        <Input
+                          name="bankName"
+                          value={paymentData.bankName}
+                          onChange={handleInputChange}
+                          placeholder="Enter bank name"
+                          className={errors.bankName ? 'border-red-500' : ''}
+                        />
+                        {errors.bankName && (
+                          <p className="text-red-500 text-sm mt-1">{errors.bankName}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </div>
 
-          {/* Order Summary */}
-          <div className="space-y-6">
             {/* Delivery Details */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Delivery Details</h2>

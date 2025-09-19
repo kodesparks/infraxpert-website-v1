@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Phone, Mail, Lock, ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 const LoginPage = () => {
@@ -12,8 +12,10 @@ const LoginPage = () => {
   const { login, isAuthenticated } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
+    phone: '',
     password: ''
   })
+  const [loginMethod, setLoginMethod] = useState('email') // 'email' or 'phone'
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -39,7 +41,18 @@ const LoginPage = () => {
     setError('')
     
     try {
-      await login(formData)
+      // Prepare login data based on selected method
+      const loginData = {
+        password: formData.password
+      }
+      
+      if (loginMethod === 'email') {
+        loginData.email = formData.email
+      } else {
+        loginData.phone = formData.phone
+      }
+      
+      await login(loginData)
       // Navigation is handled by the login function in AuthContext
     } catch (error) {
       // Handle backend validation errors
@@ -88,19 +101,55 @@ const LoginPage = () => {
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Field */}
+              {/* Login Method Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('email')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                    loginMethod === 'email'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <Mail className="w-4 h-4" />
+                    <span>Email</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('phone')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                    loginMethod === 'phone'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <Phone className="w-4 h-4" />
+                    <span>Mobile</span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Email/Phone Field */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  Email Address
+                <Label htmlFor={loginMethod} className="text-sm font-medium text-gray-700">
+                  {loginMethod === 'email' ? 'Email Address' : 'Mobile Number'}
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  {loginMethod === 'email' ? (
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  ) : (
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  )}
                   <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
+                    id={loginMethod}
+                    name={loginMethod}
+                    type={loginMethod === 'email' ? 'email' : 'tel'}
+                    placeholder={loginMethod === 'email' ? 'Enter your email' : 'Enter your mobile number'}
+                    value={formData[loginMethod]}
                     onChange={handleInputChange}
                     className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     required

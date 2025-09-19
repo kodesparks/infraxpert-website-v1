@@ -162,7 +162,7 @@ const HomePage = () => {
                   onClick={() => handleProtectedAction('cart')}
                   className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center"
                 >
-                  Cart
+                  View Products
                 </button>
               </div>
             </div>
@@ -198,7 +198,7 @@ const HomePage = () => {
                   onClick={() => handleProtectedAction('cart')}
                   className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center"
                 >
-                  Cart
+                  View Products
                 </button>
               </div>
             </div>
@@ -234,7 +234,7 @@ const HomePage = () => {
                   onClick={() => handleProtectedAction('cart')}
                   className="block w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-violet-700 transition-all duration-300 whitespace-nowrap cursor-pointer text-center"
                 >
-                  Cart
+                  View Products
                 </button>
               </div>
             </div>

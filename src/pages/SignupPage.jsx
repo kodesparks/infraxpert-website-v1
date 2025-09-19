@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, Check } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, Check, Building } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 const SignupPage = () => {
@@ -14,6 +14,7 @@ const SignupPage = () => {
     name: '',
     email: '',
     phone: '',
+    companyName: '',
     password: '',
     confirmPassword: '',
     address: '',
@@ -62,6 +63,7 @@ const SignupPage = () => {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
+        companyName: formData.companyName,
         password: formData.password,
         address: formData.address,
         pincode: formData.pincode
@@ -172,6 +174,25 @@ const SignupPage = () => {
                     onChange={handleInputChange}
                     className="pl-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     required
+                  />
+                </div>
+              </div>
+
+              {/* Company Name Field */}
+              <div className="space-y-2">
+                <Label htmlFor="companyName" className="text-sm font-medium text-gray-700">
+                  Company Name <span className="text-gray-400 text-xs">(Optional)</span>
+                </Label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Input
+                    id="companyName"
+                    name="companyName"
+                    type="text"
+                    placeholder="Enter your company name"
+                    value={formData.companyName}
+                    onChange={handleInputChange}
+                    className="pl-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
               </div>
