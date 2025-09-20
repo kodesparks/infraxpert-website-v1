@@ -142,7 +142,7 @@ const ContactPage = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Office Locations</CardTitle>
               <CardDescription>
@@ -165,7 +165,7 @@ const ContactPage = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

@@ -40,7 +40,7 @@ const HomePage = () => {
         <div className="container mx-auto px-6 w-full">
           <div className="max-w-4xl text-white">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              Premium <span className="text-[#fbbf24]">Construction Materials</span> for Every Project
+            <span className="text-[#fbbf24]">Construction Materials</span> for Every Project
             </h1>
             <p className="text-xl md:text-2xl mb-8 leading-relaxed max-w-2xl">
               Your trusted partner for cement, steel, and concrete mix supplies. Quality materials, competitive prices, and reliable delivery for construction projects of all sizes.
@@ -71,7 +71,7 @@ const HomePage = () => {
                 <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3">
                   <Shield className="text-3xl text-[#fbbf24]" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Premium Quality</h3>
+                <h3 className="text-lg font-semibold mb-2">Quality</h3>
                 <p className="text-sm opacity-90">Top-grade materials that meet industry standards</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center">
@@ -108,8 +108,8 @@ const HomePage = () => {
               <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full">
                 <MapPin className="text-2xl text-white" />
               </div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">50+</div>
-              <div className="text-lg opacity-90">Cities Served</div>
+              <div className="text-4xl md:text-5xl font-bold mb-2">11K+</div>
+              <div className="text-lg opacity-90">Pincodes Served</div>
             </div>
             <div className="text-center text-white">
               <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full">
@@ -137,7 +137,7 @@ const HomePage = () => {
               </div>
               <div className="p-8">
                 <h3 className="text-2xl font-bold text-gray-800 mb-4">Cement</h3>
-                <p className="text-gray-600 mb-6 leading-relaxed">Premium quality cement from top brands. OPC, PPC, and specialty cement varieties for all construction needs.</p>
+                <p className="text-gray-600 mb-6 leading-relaxed">Quality cement from top brands. OPC, PPC, and specialty cement varieties for all construction needs.</p>
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center text-sm text-gray-700">
                     <div className="flex items-center justify-center w-4 h-4 mr-3">
@@ -289,8 +289,8 @@ const HomePage = () => {
               <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6 group-hover:bg-blue-200 transition-colors">
                 <FileText className="text-2xl text-blue-700" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Project Documentation</h3>
-              <p className="text-gray-600 leading-relaxed">Complete documentation including test certificates, invoices, and compliance reports.</p>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Coming Soon</h3>
+              <p className="text-gray-600 leading-relaxed">will be available soon.</p>
             </div>
           </div>
         </div>
@@ -315,8 +315,8 @@ const HomePage = () => {
               <div className="flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
                 <Globe className="text-2xl text-yellow-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Pan-India Network</h3>
-              <p className="text-blue-100 leading-relaxed">Extensive distribution network covering 50+ cities across India for seamless supply chain.</p>
+              <h3 className="text-xl font-bold text-white mb-4">Across Telengana and Andhra Pradesh</h3>
+              <p className="text-blue-100 leading-relaxed">Extensive distribution network covering 11k+ pincodes across India for seamless supply chain.</p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 hover:bg-white/20 transition-all duration-300 border border-white/20">
               <div className="flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
@@ -366,16 +366,16 @@ const HomePage = () => {
               </div>
               <div className="grid grid-cols-2 gap-6 mt-12">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-700 mb-2">2008</div>
-                  <div className="text-sm text-gray-600 font-medium">Company Founded</div>
+                  <div className="text-3xl font-bold text-blue-700 mb-2">Coming Soon</div>
+                  <div className="text-sm text-gray-600 font-medium">Vendor Comming Soon</div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-700 mb-2">15+</div>
                   <div className="text-sm text-gray-600 font-medium">Years Experience</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-700 mb-2">₹500Cr+</div>
-                  <div className="text-sm text-gray-600 font-medium">Annual Turnover</div>
+                  <div className="text-3xl font-bold text-blue-700 mb-2">Coming Soon</div>
+                  <div className="text-sm text-gray-600 font-medium">Annual Turnover Coming Soon</div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-700 mb-2">50+</div>

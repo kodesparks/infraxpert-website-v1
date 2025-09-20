@@ -53,8 +53,8 @@ const ServicesPage = () => {
     },
     {
       id: 6,
-      title: "Project Documentation",
-      description: "Complete documentation and certification for all materials and project compliance requirements.",
+      title: "Coming Soon",
+      description: "will be available soon.",
       icon: FileText,
       features: ["Compliance documents", "Quality certificates", "Project records", "Audit support"],
       price: "Included",
@@ -63,7 +63,7 @@ const ServicesPage = () => {
   ]
 
   const stats = [
-    { icon: MapPin, value: "50+", label: "Cities Served" },
+    { icon: MapPin, value: "11K+", label: "Pincodes Served" },
     { icon: Users, value: "1000+", label: "Happy Clients" },
     { icon: Award, value: "15+", label: "Years Experience" },
     { icon: Truck, value: "24/7", label: "Delivery Support" }
@@ -138,7 +138,7 @@ const ServicesPage = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="text-center">
+      {/* <div className="text-center">
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle className="text-3xl">Ready to Get Started?</CardTitle>
@@ -160,7 +160,7 @@ const ServicesPage = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
     </div>
   )
 }
