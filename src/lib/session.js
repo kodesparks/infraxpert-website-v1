@@ -2,101 +2,128 @@ import Cookies from "js-cookie";
 
 // Set session (e.g., JWT or session ID)
 export const setSession = (tokenData) => {
-  const tokenString = typeof tokenData === 'string' ? tokenData : JSON.stringify(tokenData);
   const isProduction = import.meta.env?.MODE === 'production' || import.meta.env?.PROD;
   
-  console.log("Setting session cookie:", tokenString);
-  console.log("Cookie size:", tokenString.length, "characters");
+  // Only store essential token data to avoid cookie size limits
+  const essentialTokenData = {
+    accessToken: tokenData.accessToken,
+    refreshToken: tokenData.refreshToken
+  };
+  
+  const tokenString = JSON.stringify(essentialTokenData);
+  
+  console.log("Setting session (essential data only)");
+  console.log("Token size:", tokenString.length, "characters");
   console.log("Is production:", isProduction);
   
-  // Try setting without encoding first
-  Cookies.set('session', tokenString, {
-    expires: 7, // Set cookie expiration (in days)
-    secure: false, // Set to false for localhost development
-    sameSite: 'Lax', // Changed from 'Strict' to 'Lax' for better compatibility
-    path: '/',
-  });
+  // Check if token data is too large (10MB localStorage limit)
+  if (tokenString.length > 10 * 1024 * 1024) {
+    console.error("Token data too large for any browser storage!");
+    console.error("Token size:", tokenString.length, "characters");
+    console.error("This indicates a backend issue with JWT generation");
+    throw new Error("Token too large - backend JWT generation issue");
+  }
   
-  // Verify cookie was set (with a small delay to ensure it's written)
-  setTimeout(() => {
-    const verifyCookie = Cookies.get('session');
-    console.log("Session cookie verification (delayed):", verifyCookie);
-    if (!verifyCookie) {
-      console.error("Cookie was not set! Trying alternative approach...");
-      // Try with localStorage as fallback
+  // Check if token data is too large for cookies (4KB limit)
+  if (tokenString.length > 4000) {
+    console.warn("Token data too large for cookies, using localStorage only");
+    try {
+      localStorage.setItem('session', tokenString);
+      console.log("Stored in localStorage successfully");
+    } catch (error) {
+      console.error("Failed to store in localStorage:", error);
+      throw new Error("Token too large for browser storage");
+    }
+    return;
+  }
+  
+  try {
+    // Try setting cookie first
+    Cookies.set('session', tokenString, {
+      expires: 7, // Set cookie expiration (in days)
+      secure: false, // Set to false for localhost development
+      sameSite: 'Lax', // Changed from 'Strict' to 'Lax' for better compatibility
+      path: '/',
+    });
+    
+    // Also store in localStorage as backup
+    localStorage.setItem('session', tokenString);
+    
+    // Verify cookie was set (with a small delay to ensure it's written)
+    setTimeout(() => {
+      const verifyCookie = Cookies.get('session');
+      console.log("Session cookie verification (delayed):", verifyCookie ? "Set successfully" : "Not set");
+    }, 100);
+  } catch (error) {
+    console.error("Failed to set session cookie:", error);
+    // Fallback to localStorage only
+    try {
       localStorage.setItem('session', tokenString);
       console.log("Stored in localStorage as fallback");
+    } catch (localStorageError) {
+      console.error("Failed to store in localStorage:", localStorageError);
+      throw new Error("Token too large for browser storage");
     }
-  }, 100);
+  }
 };
 
 export const setUserDetails = (data) => {
-  const isProduction = import.meta.env?.MODE === 'production' || import.meta.env?.PROD;
+  console.log("Setting user details in localStorage:", data);
   
-  console.log("Setting user details cookie:", data);
-  
-  Cookies.set('userDetails', JSON.stringify(data), {
-    expires: 7, // Set cookie expiration (in days)
-    secure: false, // Set to false for localhost development
-    sameSite: 'Lax', // Changed from 'Strict' to 'Lax' for better compatibility
-    path: '/',
-  });
-  
-  // Verify cookie was set (with a small delay to ensure it's written)
-  setTimeout(() => {
-    const verifyCookie = Cookies.get('userDetails');
-    console.log("User details cookie verification (delayed):", verifyCookie);
-  }, 100);
+  try {
+    // Store user details in localStorage instead of cookies
+    localStorage.setItem('userDetails', JSON.stringify(data));
+    console.log("User details stored in localStorage successfully");
+  } catch (error) {
+    console.error("Failed to store user details in localStorage:", error);
+  }
 };
 
 // Get session
 export const getSession = () => {
-  const cookie = Cookies.get('session');
-  console.log("Getting session cookie:", cookie);
-  
-  // Check if the cookie is undefined or null, and handle accordingly
-  if (!cookie) {
-    console.log("No session cookie found, checking localStorage...");
-    const localStorageSession = localStorage.getItem('session');
-    if (localStorageSession) {
-      console.log("Found session in localStorage:", localStorageSession);
-      try {
-        const sessionData = JSON.parse(localStorageSession);
-        console.log("Parsed localStorage session data:", sessionData);
-        return sessionData;
-      } catch (error) {
-        console.error('Error parsing localStorage session:', error);
-        return null;
-      }
+  // Try localStorage first (more reliable for large data)
+  const localStorageSession = localStorage.getItem('session');
+  if (localStorageSession) {
+    try {
+      const sessionData = JSON.parse(localStorageSession);
+      console.log("Found session in localStorage");
+      return sessionData;
+    } catch (error) {
+      console.error('Error parsing localStorage session:', error);
     }
-    return null;
-  }  
-
-  try {
-    const cookieData = JSON.parse(cookie);
-    console.log("Parsed session data:", cookieData);
-    return cookieData;
-  } catch (error) {
-    console.error('Error parsing session cookie:', error);
-    return null;
   }
+  
+  // Fallback to cookie
+  const cookie = Cookies.get('session');
+  if (cookie) {
+    try {
+      const cookieData = JSON.parse(cookie);
+      console.log("Found session in cookie");
+      return cookieData;
+    } catch (error) {
+      console.error('Error parsing session cookie:', error);
+    }
+  }
+  
+  console.log("No session found in localStorage or cookies");
+  return null;
 };
 
 // Get user details
 export const getUserDetails = () => {
-  const cookie = Cookies.get('userDetails');
-  // Check if the cookie is undefined or null, and handle accordingly
-  if (!cookie) {
-    return null;
-  }
-
   try {
-    const cookieData = JSON.parse(cookie);
-    return cookieData;
+    const userDetails = localStorage.getItem('userDetails');
+    if (userDetails) {
+      const parsedData = JSON.parse(userDetails);
+      console.log("Found user details in localStorage");
+      return parsedData;
+    }
   } catch (error) {
-    console.error('Error parsing user details cookie:', error);
-    return null;
+    console.error('Error parsing user details from localStorage:', error);
   }
+  
+  console.log("No user details found in localStorage");
+  return null;
 };
 
 // Delete session
@@ -107,7 +134,8 @@ export const deleteSession = () => {
 };
 
 export const deleteUserDetails = () => {
-  Cookies.remove('userDetails', { path: '/' });
+  localStorage.removeItem('userDetails');
+  console.log("User details removed from localStorage");
 };
 
 // Page section management for preserving tab/section information

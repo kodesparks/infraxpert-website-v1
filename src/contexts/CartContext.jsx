@@ -43,6 +43,12 @@ const cartReducer = (state, action) => {
         items: []
       }
     
+    case 'SET_CART':
+      return {
+        ...state,
+        items: action.payload || []
+      }
+    
     case 'SET_DELIVERY_DETAILS':
       return {
         ...state,
@@ -69,19 +75,7 @@ const initialState = {
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState)
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart')
-    if (savedCart) {
-      const parsedCart = JSON.parse(savedCart)
-      dispatch({ type: 'SET_CART', payload: parsedCart.items || [] })
-    }
-  }, [])
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(state))
-  }, [state])
+  // No localStorage usage - pure context state management
 
   const addToCart = (product) => {
     dispatch({ type: 'ADD_TO_CART', payload: product })

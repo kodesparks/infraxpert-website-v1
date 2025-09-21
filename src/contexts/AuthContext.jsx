@@ -100,6 +100,7 @@ export const AuthProvider = ({ children }) => {
               } else {
                 console.log("Token refresh failed, logging out");
                 deleteSession();
+                setIsAuthenticated(false);
                 navigate(getRedirectUrl(location.pathname));
               }
             }
@@ -110,26 +111,27 @@ export const AuthProvider = ({ children }) => {
         }
       } else {
         console.log("No token found, setting authenticated to false");
-        // Only set to false if we're not already authenticated (to prevent overriding login state)
-        if (!isAuthenticated) {
-          setIsAuthenticated(false);
-        }
+        setIsAuthenticated(false);
       }
       
       setPreLoader(false);
     };
 
-    // Add a small delay to prevent interference with login process
-    const timeoutId = setTimeout(checkTokenExpiry, 500);
+    // Only run initial check, don't interfere with ongoing login process
+    const timeoutId = setTimeout(checkTokenExpiry, 1000);
     
-    // Check expiry every 5 minutes
-    const intervalId = setInterval(checkTokenExpiry, 5 * 60 * 1000);
+    // Check expiry every 5 minutes (but not on initial load)
+    const intervalId = setInterval(() => {
+      if (!preLoader) { // Only run interval checks after initial load
+        checkTokenExpiry();
+      }
+    }, 5 * 60 * 1000);
     
     return () => {
       clearTimeout(timeoutId);
       clearInterval(intervalId);
     };
-  }, [navigate, location.pathname, isAuthenticated]);
+  }, [navigate, location.pathname]); // Removed isAuthenticated from dependencies
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -148,17 +150,31 @@ export const AuthProvider = ({ children }) => {
       
       if (response) {
         console.log("Login successful, setting authentication state");
+        
+        // Set authentication state immediately
         setIsAuthenticated(true);
         setUser(response.user);
         setRole(response.user?.role || "customer");
         
-        // Check if cookies were set (with a small delay to ensure they're written)
+        // Set claims if available
+        if (response.accessToken) {
+          try {
+            const decodedClaims = await decodeToken(response.accessToken);
+            if (decodedClaims) {
+              setClaims(decodedClaims);
+            }
+          } catch (error) {
+            console.error("Error decoding token:", error);
+          }
+        }
+        
+        // Check if session was stored properly
         setTimeout(() => {
           const token = getSession();
           const userData = getUserDetails();
-          console.log("Token after login (delayed):", token);
-          console.log("User data after login (delayed):", userData);
-        }, 200);
+          console.log("Token after login (delayed):", token ? "Found" : "Not found");
+          console.log("User data after login (delayed):", userData ? "Found" : "Not found");
+        }, 500);
         
         // Redirect to intended page or home
         const redirectUrl = new URLSearchParams(location.search).get('redirectUrl');

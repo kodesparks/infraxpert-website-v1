@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CartProvider } from '@/contexts/CartContext'
 import { InventoryProvider } from '@/contexts/InventoryContext'
+import { OrdersProvider } from '@/contexts/OrdersContext'
 import MainLayout from '@/layouts/MainLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -19,6 +20,7 @@ import UserProfilePage from '@/pages/UserProfilePage'
 import DeliveryDetailsPage from '@/pages/DeliveryDetailsPage'
 import PaymentPage from '@/pages/PaymentPage'
 import PlaceOrderPage from '@/pages/PlaceOrderPage'
+import OrdersPage from '@/pages/OrdersPage'
 import './App.css'
 
 function App() {
@@ -26,7 +28,8 @@ function App() {
     <Router>
       <AuthProvider>
         <CartProvider>
-          <Routes>
+          <OrdersProvider>
+            <Routes>
           {/* Authentication pages - No header */}
           <Route path="/login" element={
             <AuthLayout>
@@ -62,6 +65,13 @@ function App() {
           <Route path="/services" element={
             <MainLayout>
               <ServicesPage />
+            </MainLayout>
+          } />
+          <Route path="/orders" element={
+            <MainLayout>
+              <ProtectedRoute>
+                <OrdersPage />
+              </ProtectedRoute>
             </MainLayout>
           } />
           <Route path="/about" element={
@@ -103,6 +113,7 @@ function App() {
             </MainLayout>
           } />
           </Routes>
+          </OrdersProvider>
         </CartProvider>
       </AuthProvider>
     </Router>

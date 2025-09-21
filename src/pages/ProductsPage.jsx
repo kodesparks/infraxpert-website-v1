@@ -13,11 +13,14 @@ import {
   AlertCircle,
   RefreshCw,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MapPin,
+  Calculator
 } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useInventory } from '@/contexts/InventoryContext'
 import { useNavigate } from 'react-router-dom'
+import PincodePopup from '@/components/PincodePopup'
 import cementImage from '@/assets/images/cement.jpg'
 import steelImage from '@/assets/images/steel.jpg'
 import mixerImage from '@/assets/images/mixer.jpg'
@@ -29,6 +32,9 @@ const ProductsPage = () => {
   const [sortBy, setSortBy] = useState('popular')
   const [searchTerm, setSearchTerm] = useState('')
   const [productImageIndex, setProductImageIndex] = useState({}) // Track current image index for each product
+  const [pincode, setPincode] = useState('')
+  const [isPincodePopupOpen, setIsPincodePopupOpen] = useState(false)
+  const [deliveryCharges, setDeliveryCharges] = useState({}) // Store delivery charges per product
   const { addToCart } = useCart()
   const navigate = useNavigate()
 
@@ -198,6 +204,39 @@ const ProductsPage = () => {
     return product.images[currentIndex]?.url || product.image
   }
 
+  // Handle pincode submission
+  const handlePincodeSubmit = (newPincode) => {
+    setPincode(newPincode)
+    // Simulate distance calculation and delivery charges
+    const mockDeliveryCharges = {}
+    products.forEach(product => {
+      // Mock delivery charge calculation based on distance
+      const baseDistance = Math.floor(Math.random() * 50) + 10 // 10-60 km
+      const chargePerKm = 2 // ₹2 per km
+      const baseDeliveryCharge = 50 // ₹50 base charge
+      const totalDeliveryCharge = baseDeliveryCharge + (baseDistance * chargePerKm)
+      
+      mockDeliveryCharges[product.id] = {
+        distance: baseDistance,
+        charge: totalDeliveryCharge,
+        freeDelivery: totalDeliveryCharge === 0
+      }
+    })
+    setDeliveryCharges(mockDeliveryCharges)
+  }
+
+  // Calculate total price including delivery
+  const getTotalPrice = (product) => {
+    const basePrice = product.currentPrice
+    const deliveryCharge = deliveryCharges[product.id]?.charge || 0
+    return basePrice + deliveryCharge
+  }
+
+  // Get delivery info for a product
+  const getDeliveryInfo = (product) => {
+    return deliveryCharges[product.id] || null
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
@@ -337,8 +376,20 @@ const ProductsPage = () => {
                 )}
               </div>
               
-              {/* Right side - Search and Sort */}
+              {/* Right side - Pincode, Search and Sort */}
               <div className="flex flex-col sm:flex-row items-center gap-3">
+                {/* Pincode Button */}
+                <button
+                  onClick={() => setIsPincodePopupOpen(true)}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    pincode 
+                      ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200' 
+                      : 'bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200'
+                  }`}
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  {pincode ? `📍 ${pincode}` : '📍 Add Pincode'}
+                </button>
                 {/* Search Bar */}
                 <div className="relative w-full sm:w-64">
                   <input
@@ -554,17 +605,64 @@ const ProductsPage = () => {
                     )}
 
                     {/* Pricing */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <div className="text-sm font-bold text-gray-800">
-                          ₹{product.currentPrice.toLocaleString()}{product.unit}
-                        </div>
-                        {product.originalPrice > product.currentPrice && (
-                          <div className="text-xs text-gray-500 line-through">
-                            ₹{product.originalPrice.toLocaleString()}{product.unit}
+                    <div className="mb-3">
+                      {pincode ? (
+                        <div className="space-y-2">
+                          {/* Base Price */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500">Base Price:</span>
+                            <span className="text-xs text-gray-600">
+                              ₹{product.currentPrice.toLocaleString()}{product.unit}
+                            </span>
                           </div>
-                        )}
-                      </div>
+                          
+                          {/* Delivery Charge */}
+                          {getDeliveryInfo(product) && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Delivery:</span>
+                              <span className={`text-xs ${
+                                getDeliveryInfo(product).freeDelivery 
+                                  ? 'text-green-600 font-medium' 
+                                  : 'text-gray-600'
+                              }`}>
+                                {getDeliveryInfo(product).freeDelivery 
+                                  ? 'FREE' 
+                                  : `₹${getDeliveryInfo(product).charge.toLocaleString()}`
+                                }
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Total Price */}
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <span className="text-sm font-semibold text-gray-800">Total:</span>
+                            <span className="text-sm font-bold text-blue-600">
+                              ₹{getTotalPrice(product).toLocaleString()}{product.unit}
+                            </span>
+                          </div>
+                          
+                          {/* Distance Info */}
+                          {getDeliveryInfo(product) && (
+                            <div className="text-xs text-gray-500 text-center">
+                              📍 {getDeliveryInfo(product).distance}km from warehouse
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="text-sm font-bold text-gray-800">
+                            ₹{product.currentPrice.toLocaleString()}{product.unit}
+                          </div>
+                          {product.originalPrice > product.currentPrice && (
+                            <div className="text-xs text-gray-500 line-through">
+                              ₹{product.originalPrice.toLocaleString()}{product.unit}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-500 mt-1">
+                            + Delivery charges
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Action Buttons */}
@@ -634,6 +732,14 @@ const ProductsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Pincode Popup */}
+      <PincodePopup
+        isOpen={isPincodePopupOpen}
+        onClose={() => setIsPincodePopupOpen(false)}
+        onPincodeSubmit={handlePincodeSubmit}
+        currentPincode={pincode}
+      />
     </div>
   )
 }

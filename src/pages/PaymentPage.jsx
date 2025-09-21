@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useOrders } from '@/contexts/OrdersContext'
 import { ArrowLeft, CreditCard, Smartphone, Wallet, CheckCircle, MapPin, Calendar, Phone, Mail, User, Building2, Banknote, Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const PaymentPage = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { items, getTotalPrice, deliveryDetails, clearCart } = useCart()
   const { user } = useAuth()
+  const { updateOrderStatus, getOrderById } = useOrders()
   
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('')
   const [paymentData, setPaymentData] = useState({
@@ -217,17 +220,43 @@ const PaymentPage = () => {
 
     setIsProcessing(true)
 
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false)
-      setOrderPlaced(true)
+    try {
+      // Get order ID from navigation state
+      const orderId = location.state?.orderId
       
-      // Clear cart after successful order
+      if (orderId) {
+        // Update order with payment details
+        const order = getOrderById(orderId)
+        if (order) {
+          // Update order status to confirmed
+          updateOrderStatus(orderId, 'confirmed', 'Payment completed successfully')
+          
+          // Update order with payment method
+          // Note: In a real app, you'd update the order object with payment details
+        }
+      }
+
+      // Simulate payment processing
       setTimeout(() => {
-        clearCart()
-        navigate('/')
-      }, 3000)
-    }, 2000)
+        setIsProcessing(false)
+        setOrderPlaced(true)
+        
+        // Clear cart after successful order
+        setTimeout(() => {
+          clearCart()
+          navigate('/orders', { 
+            state: { 
+              message: 'Order placed successfully!',
+              orderId: orderId 
+            } 
+          })
+        }, 3000)
+      }, 2000)
+    } catch (error) {
+      console.error('Payment processing error:', error)
+      setIsProcessing(false)
+      // Handle error - show error message to user
+    }
   }
 
   const totalAmount = getTotalPrice()

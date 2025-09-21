@@ -18,9 +18,9 @@ const ContactPage = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="max-w-2xl mx-auto">
         {/* Contact Form */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Send us a Message</CardTitle>
             <CardDescription>
@@ -66,7 +66,7 @@ const ContactPage = () => {
               Send Message
             </Button>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Contact Information */}
         <div className="space-y-6">
@@ -92,7 +92,7 @@ const ContactPage = () => {
                   <p className="text-gray-600">info@infraxpert.com</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
+              {/* <div className="flex items-center space-x-3">
                 <MapPin className="w-5 h-5 text-blue-600" />
                 <div>
                   <p className="font-semibold">Address</p>
@@ -113,11 +113,11 @@ const ContactPage = () => {
                     Sunday: Closed
                   </p>
                 </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Quick Support</CardTitle>
               <CardDescription>
@@ -140,7 +140,7 @@ const ContactPage = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* <Card>
             <CardHeader>

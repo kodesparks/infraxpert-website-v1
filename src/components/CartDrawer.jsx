@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useCart } from '@/contexts/CartContext'
+import { useOrders } from '@/contexts/OrdersContext'
 import { useNavigate } from 'react-router-dom'
 import { X, Plus, Minus, Trash2, ShoppingBag, User, Phone, Mail, MapPin, Calendar, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -7,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 const CartDrawer = ({ isOpen, onClose }) => {
-  const { items, removeFromCart, updateQuantity, getTotalPrice, setDeliveryDetails } = useCart()
+  const { items, removeFromCart, updateQuantity, getTotalPrice, setDeliveryDetails, clearCart } = useCart()
+  const { createOrder } = useOrders()
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState('cart') // 'cart' or 'delivery'
   const [formData, setFormData] = useState({
@@ -96,9 +98,38 @@ const CartDrawer = ({ isOpen, onClose }) => {
 
   const handlePlaceOrder = () => {
     if (validateForm()) {
+      // Set delivery details in cart context
       setDeliveryDetails(formData)
+      
+      // Create order in orders context
+      const cartData = {
+        items: items,
+        totalAmount: getTotalPrice(),
+        deliveryCharges: 0, // Will be calculated in payment page
+        finalAmount: getTotalPrice()
+      }
+      
+      const paymentData = {
+        method: 'pending' // Will be set in payment page
+      }
+      
+      const deliveryData = {
+        name: formData.fullName,
+        phone: formData.phoneNumber,
+        email: formData.email,
+        address: formData.deliveryAddress,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pinCode,
+        preferredDeliveryDate: formData.preferredDeliveryDate
+      }
+      
+      // Create the order
+      const order = createOrder(cartData, paymentData, deliveryData)
+      
+      // Close drawer and navigate to payment
       onClose()
-      navigate('/payment')
+      navigate('/payment', { state: { orderId: order.id } })
     }
   }
 

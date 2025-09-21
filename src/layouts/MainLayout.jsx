@@ -114,6 +114,18 @@ const MainLayout = ({ children }) => {
               >
                 Services
               </Link>
+              {isAuthenticated && (
+                <Link 
+                  to="/orders" 
+                  className={`font-medium transition-colors ${
+                    isActive('/orders') 
+                      ? 'text-blue-700' 
+                      : 'text-gray-700 hover:text-blue-700'
+                  }`}
+                >
+                  Orders
+                </Link>
+              )}
               <Link 
                 to="/about" 
                 className={`font-medium transition-colors ${
@@ -236,6 +248,19 @@ const MainLayout = ({ children }) => {
               >
                 Services
               </Link>
+              {isAuthenticated && (
+                <Link 
+                  to="/orders" 
+                  onClick={closeMobileMenu}
+                  className={`block px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    isActive('/orders') 
+                      ? 'bg-blue-700 text-white shadow-md' 
+                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm'
+                  }`}
+                >
+                  Orders
+                </Link>
+              )}
               <Link 
                 to="/about" 
                 onClick={closeMobileMenu}
