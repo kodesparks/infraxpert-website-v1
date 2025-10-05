@@ -1,7 +1,21 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react'
+import * as orderService from '@/services/order'
 
-// Order status constants
+// Order status constants - mapped to API statuses
 export const ORDER_STATUS = {
+  PENDING: 'pending',
+  CONFIRMED: 'vendor_accepted',
+  PROCESSING: 'payment_done',
+  SHIPPED: 'shipped',
+  IN_TRANSIT: 'in_transit',
+  OUT_FOR_DELIVERY: 'out_for_delivery',
+  DELIVERED: 'delivered',
+  CANCELLED: 'cancelled',
+  RETURNED: 'returned'
+}
+
+// UI Status mapping for display
+export const UI_ORDER_STATUS = {
   PENDING: 'pending',
   CONFIRMED: 'confirmed',
   PROCESSING: 'processing',
@@ -16,57 +30,57 @@ export const ORDER_STATUS = {
 // Order status display info
 export const ORDER_STATUS_INFO = {
   [ORDER_STATUS.PENDING]: {
-    label: 'Pending',
+    label: 'Order Placed',
     color: 'yellow',
-    icon: '⏳',
-    description: 'Order received, awaiting confirmation'
+    icon: 'Clock',
+    description: 'Order received, awaiting vendor confirmation'
   },
   [ORDER_STATUS.CONFIRMED]: {
-    label: 'Confirmed',
+    label: 'Vendor Accepted',
     color: 'blue',
-    icon: '✅',
-    description: 'Order confirmed, preparing for processing'
+    icon: 'CheckCircle',
+    description: 'Vendor accepted the order - Payment required'
   },
   [ORDER_STATUS.PROCESSING]: {
-    label: 'Processing',
+    label: 'Order Confirmed',
     color: 'purple',
-    icon: '🔄',
-    description: 'Order is being processed and prepared'
+    icon: 'CreditCard',
+    description: 'Payment processed successfully - Order confirmed'
   },
   [ORDER_STATUS.SHIPPED]: {
     label: 'Shipped',
     color: 'indigo',
-    icon: '📦',
+    icon: 'Package',
     description: 'Order has been shipped from warehouse'
   },
   [ORDER_STATUS.IN_TRANSIT]: {
     label: 'In Transit',
     color: 'blue',
-    icon: '🚚',
+    icon: 'Truck',
     description: 'Order is on the way to your location'
   },
   [ORDER_STATUS.OUT_FOR_DELIVERY]: {
     label: 'Out for Delivery',
     color: 'green',
-    icon: '🚛',
+    icon: 'Truck',
     description: 'Order is out for delivery today'
   },
   [ORDER_STATUS.DELIVERED]: {
     label: 'Delivered',
     color: 'green',
-    icon: '🎉',
+    icon: 'CheckCircle',
     description: 'Order has been delivered successfully'
   },
   [ORDER_STATUS.CANCELLED]: {
     label: 'Cancelled',
     color: 'red',
-    icon: '❌',
+    icon: 'XCircle',
     description: 'Order has been cancelled'
   },
   [ORDER_STATUS.RETURNED]: {
     label: 'Returned',
     color: 'orange',
-    icon: '↩️',
+    icon: 'RotateCcw',
     description: 'Order has been returned'
   }
 }
@@ -152,7 +166,122 @@ export const OrdersProvider = ({ children }) => {
     return `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
   }
 
-  // Create new order from cart
+  // Load customer orders from API
+  const loadOrders = useCallback(async (status = null) => {
+    try {
+      dispatch({ type: ORDERS_ACTIONS.SET_LOADING, payload: true })
+      
+      const params = {}
+      if (status) params.status = status
+      
+      const response = await orderService.getCustomerOrders(params)
+      
+      if (response && response.orders) {
+        // Transform API orders to UI format
+        const transformedOrders = response.orders.map(order => ({
+          id: order.leadId || order._id,
+          orderNumber: order.formattedLeadId || order.leadId,
+          items: (order.items || []).map(item => ({
+            id: item.itemCode?._id || item.itemCode?.id,
+            name: item.itemCode?.itemDescription || 'Product',
+            image: item.itemCode?.primaryImage || '/placeholder-image.jpg',
+            price: item.unitPrice || 0,
+            currentPrice: item.unitPrice || 0,
+            quantity: item.qty || 1,
+            totalCost: item.totalCost || 0
+          })),
+          totalAmount: order.totalAmount || 0,
+          deliveryCharges: 0, // Will be calculated
+          finalAmount: order.totalAmount || 0,
+          status: order.orderStatus || ORDER_STATUS.PENDING,
+          orderDate: order.orderDate,
+          estimatedDelivery: order.deliveryExpectedDate,
+          deliveryAddress: order.deliveryAddress,
+          deliveryPincode: order.deliveryPincode,
+          customerName: order.custUserId?.name || 'Customer',
+          customerPhone: order.custUserId?.phone || '',
+          customerEmail: order.custUserId?.email || '',
+          paymentMethod: order.paymentMethod || 'Pending',
+          vendorId: order.vendorId?._id,
+          vendorName: order.vendorId?.name,
+          statusHistory: order.statusHistory || [{
+            status: order.orderStatus || ORDER_STATUS.PENDING,
+            timestamp: order.orderDate,
+            description: ORDER_STATUS_INFO[order.orderStatus || ORDER_STATUS.PENDING]?.description || 'Order status updated'
+          }],
+          customerInfo: {
+            name: order.custUserId?.name || 'Customer',
+            phone: order.custUserId?.phone || '',
+            email: order.custUserId?.email || ''
+          }
+        }))
+        
+        dispatch({ type: ORDERS_ACTIONS.SET_ORDERS, payload: transformedOrders })
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error)
+      dispatch({ type: ORDERS_ACTIONS.SET_ERROR, payload: error.message || 'Failed to load orders' })
+    }
+  }, [])
+
+  // Add item to cart via API
+  const addToCart = useCallback(async (itemData) => {
+    try {
+      dispatch({ type: ORDERS_ACTIONS.SET_LOADING, payload: true })
+      
+      const response = await orderService.addToCart(itemData)
+      
+      if (response && response.order) {
+        // Transform API order to UI format
+        const transformedOrder = {
+          id: response.order.leadId,
+          orderNumber: response.order.formattedLeadId,
+          items: (response.order.items || []).map(item => ({
+            id: item.itemCode?._id || item.itemCode?.id,
+            name: item.itemCode?.itemDescription || 'Product',
+            image: item.itemCode?.primaryImage || '/placeholder-image.jpg',
+            price: item.unitPrice || 0,
+            currentPrice: item.unitPrice || 0,
+            quantity: item.qty || 1,
+            totalCost: item.totalCost || 0
+          })),
+          totalAmount: response.order.totalAmount || 0,
+          deliveryCharges: 0,
+          finalAmount: response.order.totalAmount || 0,
+          status: response.order.orderStatus || ORDER_STATUS.PENDING,
+          orderDate: response.order.orderDate,
+          estimatedDelivery: null,
+          deliveryAddress: itemData.deliveryAddress,
+          deliveryPincode: itemData.deliveryPincode,
+          customerName: 'Current User',
+          customerPhone: itemData.custPhoneNum,
+          customerEmail: '',
+          paymentMethod: 'Pending',
+          vendorId: response.order.vendorId?._id,
+          vendorName: response.order.vendorId?.name,
+          statusHistory: [{
+            status: response.order.orderStatus || ORDER_STATUS.PENDING,
+            timestamp: response.order.orderDate,
+            description: ORDER_STATUS_INFO[response.order.orderStatus || ORDER_STATUS.PENDING]?.description || 'Order status updated'
+          }],
+          customerInfo: {
+            name: 'Current User',
+            phone: itemData.custPhoneNum,
+            email: ''
+          }
+        }
+        
+        dispatch({ type: ORDERS_ACTIONS.ADD_ORDER, payload: transformedOrder })
+        return transformedOrder
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      dispatch({ type: ORDERS_ACTIONS.SET_ERROR, payload: error.message || 'Failed to add item to cart' })
+      throw error
+    }
+  }, [])
+
+  // Create new order from cart (legacy function for compatibility)
   const createOrder = useCallback((cartData, paymentData, deliveryData) => {
     const orderId = generateOrderId()
     const order = {
@@ -188,7 +317,72 @@ export const OrdersProvider = ({ children }) => {
     return order
   }, [])
 
-  // Update order status
+  // Place order via API
+  const placeOrder = useCallback(async (leadId, orderData) => {
+    try {
+      dispatch({ type: ORDERS_ACTIONS.SET_LOADING, payload: true })
+      
+      const response = await orderService.placeOrder(leadId, orderData)
+      
+      if (response && response.order) {
+        // Update the order in state
+        const statusUpdate = {
+          status: ORDER_STATUS.PENDING,
+          deliveryAddress: orderData.deliveryAddress,
+          deliveryPincode: orderData.deliveryPincode,
+          estimatedDelivery: orderData.deliveryExpectedDate,
+          statusHistory: [
+            {
+              status: ORDER_STATUS.PENDING,
+              timestamp: new Date().toISOString(),
+              description: 'Order placed successfully'
+            }
+          ]
+        }
+        
+        dispatch({ type: ORDERS_ACTIONS.UPDATE_ORDER, payload: { id: leadId, ...statusUpdate } })
+        return response.order
+      }
+    } catch (error) {
+      console.error('Error placing order:', error)
+      dispatch({ type: ORDERS_ACTIONS.SET_ERROR, payload: error.message || 'Failed to place order' })
+      throw error
+    }
+  }, [])
+
+  // Process payment via API
+  const processPayment = useCallback(async (leadId, paymentData) => {
+    try {
+      dispatch({ type: ORDERS_ACTIONS.SET_LOADING, payload: true })
+      
+      const response = await orderService.processPayment(leadId, paymentData)
+      
+      if (response && response.payment) {
+        // Update order status to payment done
+        const statusUpdate = {
+          status: ORDER_STATUS.PROCESSING,
+          paymentMethod: paymentData.paymentType,
+          paymentStatus: response.payment.paymentStatus,
+          statusHistory: [
+            {
+              status: ORDER_STATUS.PROCESSING,
+              timestamp: new Date().toISOString(),
+              description: 'Payment processed successfully'
+            }
+          ]
+        }
+        
+        dispatch({ type: ORDERS_ACTIONS.UPDATE_ORDER, payload: { id: leadId, ...statusUpdate } })
+        return response.payment
+      }
+    } catch (error) {
+      console.error('Error processing payment:', error)
+      dispatch({ type: ORDERS_ACTIONS.SET_ERROR, payload: error.message || 'Failed to process payment' })
+      throw error
+    }
+  }, [])
+
+  // Update order status (legacy function for compatibility)
   const updateOrderStatus = useCallback((orderId, newStatus, description = '') => {
     const order = state.orders.find(o => o.id === orderId)
     if (!order) return
@@ -314,7 +508,13 @@ export const OrdersProvider = ({ children }) => {
     error: state.error,
     selectedOrder: state.selectedOrder,
     
-    // Actions
+    // API Actions
+    loadOrders,
+    addToCart,
+    placeOrder,
+    processPayment,
+    
+    // Legacy Actions (for compatibility)
     createOrder,
     updateOrderStatus,
     getOrdersByStatus,

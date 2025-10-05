@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useState } from 'react'
+import * as orderService from '@/services/order'
 
 const CartContext = createContext()
 
@@ -74,19 +75,90 @@ const initialState = {
 
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // No localStorage usage - pure context state management
+  // No server-side cart sync - pure local state management
 
-  const addToCart = (product) => {
-    dispatch({ type: 'ADD_TO_CART', payload: product })
+  const addToCart = async (product, deliveryData = {}) => {
+    try {
+      // Prepare data for API call
+      const cartData = {
+        itemCode: product.id,
+        qty: product.quantity || 1,
+        deliveryAddress: deliveryData.deliveryAddress || '',
+        deliveryPincode: deliveryData.deliveryPincode || '',
+        deliveryExpectedDate: deliveryData.deliveryExpectedDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        custPhoneNum: deliveryData.custPhoneNum || '',
+        receiverMobileNum: deliveryData.receiverMobileNum || deliveryData.custPhoneNum || ''
+      }
+
+      // Call API to add to cart
+      const response = await orderService.addToCart(cartData)
+      
+      if (response && response.order) {
+        // Update local cart state with API response
+        const cartItem = {
+          id: product.id,
+          name: product.name,
+          image: product.image,
+          currentPrice: product.currentPrice,
+          quantity: product.quantity || 1,
+          leadId: response.order.leadId,
+          orderNumber: response.order.formattedLeadId
+        }
+        
+        dispatch({ type: 'ADD_TO_CART', payload: cartItem })
+        return response.order
+      }
+    } catch (error) {
+      console.error('Error adding to cart via API:', error)
+      // Fallback to local cart if API fails
+      dispatch({ type: 'ADD_TO_CART', payload: product })
+      throw error
+    }
   }
 
-  const removeFromCart = (productId) => {
-    dispatch({ type: 'REMOVE_FROM_CART', payload: productId })
+  const removeFromCart = async (productId, leadId = null) => {
+    try {
+      if (leadId) {
+        // Call API to remove from cart - pass only the item ID string
+        await orderService.removeFromCart(leadId, productId)
+      }
+      
+      // Update local cart state
+      dispatch({ type: 'REMOVE_FROM_CART', payload: productId })
+    } catch (error) {
+      console.error('Error removing from cart via API:', error)
+      // Fallback to local cart if API fails
+      dispatch({ type: 'REMOVE_FROM_CART', payload: productId })
+      throw error
+    }
   }
 
-  const updateQuantity = (productId, quantity) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity } })
+  const updateQuantity = async (productId, quantity, leadId = null) => {
+    try {
+      if (leadId && quantity > 0) {
+        // Call API to update order quantity
+        const updateData = {
+          items: [{ itemCode: productId, qty: quantity }]
+        }
+        await orderService.updateOrder(leadId, updateData)
+        
+        // Update local cart state after successful API call
+        dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity } })
+      } else if (quantity <= 0) {
+        // Remove item if quantity is 0 or negative
+        await removeFromCart(productId, leadId)
+      } else {
+        // Update local cart state for items without leadId
+        dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity } })
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error)
+      // Fallback to local cart if API fails
+      dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity } })
+      throw error
+    }
   }
 
   const clearCart = () => {
@@ -111,6 +183,7 @@ export const CartProvider = ({ children }) => {
 
   const value = {
     ...state,
+    isLoading,
     addToCart,
     removeFromCart,
     updateQuantity,

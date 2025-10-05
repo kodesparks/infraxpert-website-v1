@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useOrders } from '@/contexts/OrdersContext'
+import * as orderService from '@/services/order'
 import { ArrowLeft, CreditCard, Smartphone, Wallet, CheckCircle, MapPin, Calendar, Phone, Mail, User, Building2, Banknote, Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +13,7 @@ const PaymentPage = () => {
   const location = useLocation()
   const { items, getTotalPrice, deliveryDetails, clearCart } = useCart()
   const { user } = useAuth()
-  const { updateOrderStatus, getOrderById } = useOrders()
+  const { updateOrderStatus, getOrderById, processPayment } = useOrders()
   
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('')
   const [paymentData, setPaymentData] = useState({
@@ -33,6 +34,8 @@ const PaymentPage = () => {
   const [errors, setErrors] = useState({})
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState(null)
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false)
 
   // Redirect if cart is empty or no delivery details
   useEffect(() => {
@@ -43,6 +46,37 @@ const PaymentPage = () => {
       navigate('/delivery-details')
     }
   }, [items, deliveryDetails, navigate])
+
+  // Check payment status on component mount
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      const orderId = location.state?.orderId
+      if (orderId) {
+        setIsCheckingPayment(true)
+        try {
+          const response = await orderService.getPaymentStatus(orderId)
+          if (response && response.payment) {
+            setPaymentStatus(response.payment)
+            // If payment is already completed, redirect to orders
+            if (response.payment.paymentStatus === 'completed') {
+              navigate('/orders', { 
+                state: { 
+                  message: 'Payment already completed!',
+                  orderId: orderId 
+                } 
+              })
+            }
+          }
+        } catch (error) {
+          console.error('Error checking payment status:', error)
+        } finally {
+          setIsCheckingPayment(false)
+        }
+      }
+    }
+
+    checkPaymentStatus()
+  }, [location.state?.orderId, navigate])
 
   const paymentMethods = [
     {
@@ -225,37 +259,89 @@ const PaymentPage = () => {
       const orderId = location.state?.orderId
       
       if (orderId) {
-        // Update order with payment details
-        const order = getOrderById(orderId)
-        if (order) {
+        // Map UI payment method to API payment type
+        const paymentTypeMap = {
+          'card': 'credit_card',
+          'upi': 'upi',
+          'wallet': 'wallet',
+          'netbanking': 'net_banking',
+          'cod': 'cash_on_delivery',
+          'rtgs': 'bank_transfer',
+          'neft': 'bank_transfer',
+          'cheque': 'bank_transfer',
+          'dd': 'bank_transfer'
+        }
+
+        const paymentModeMap = {
+          'card': 'online',
+          'upi': 'online',
+          'wallet': 'online',
+          'netbanking': 'online',
+          'cod': 'cash_on_delivery',
+          'rtgs': 'offline',
+          'neft': 'offline',
+          'cheque': 'offline',
+          'dd': 'offline'
+        }
+
+        // Prepare payment data for API
+        const paymentData = {
+          paymentType: paymentTypeMap[selectedPaymentMethod] || 'credit_card',
+          paymentMode: paymentModeMap[selectedPaymentMethod] || 'online'
+        }
+
+        // Process payment via API
+        const paymentResponse = await processPayment(orderId, paymentData)
+        
+        if (paymentResponse) {
+          // Check payment status after processing
+          try {
+            const statusResponse = await orderService.getPaymentStatus(orderId)
+            if (statusResponse && statusResponse.payment) {
+              setPaymentStatus(statusResponse.payment)
+            }
+          } catch (error) {
+            console.error('Error checking payment status after processing:', error)
+          }
+          
           // Update order status to confirmed
           updateOrderStatus(orderId, 'confirmed', 'Payment completed successfully')
           
-          // Update order with payment method
-          // Note: In a real app, you'd update the order object with payment details
+          setIsProcessing(false)
+          setOrderPlaced(true)
+          
+          // Clear cart after successful order
+          setTimeout(() => {
+            clearCart()
+            navigate('/orders', { 
+              state: { 
+                message: 'Order placed successfully!',
+                orderId: orderId 
+              } 
+            })
+          }, 3000)
         }
-      }
-
-      // Simulate payment processing
-      setTimeout(() => {
-        setIsProcessing(false)
-        setOrderPlaced(true)
-        
-        // Clear cart after successful order
+      } else {
+        // Fallback for orders without API integration
         setTimeout(() => {
-          clearCart()
-          navigate('/orders', { 
-            state: { 
-              message: 'Order placed successfully!',
-              orderId: orderId 
-            } 
-          })
-        }, 3000)
-      }, 2000)
+          setIsProcessing(false)
+          setOrderPlaced(true)
+          
+          // Clear cart after successful order
+          setTimeout(() => {
+            clearCart()
+            navigate('/orders', { 
+              state: { 
+                message: 'Order placed successfully!'
+              } 
+            })
+          }, 3000)
+        }, 2000)
+      }
     } catch (error) {
       console.error('Payment processing error:', error)
       setIsProcessing(false)
-      // Handle error - show error message to user
+      setErrors({ paymentMethod: 'Payment processing failed. Please try again.' })
     }
   }
 

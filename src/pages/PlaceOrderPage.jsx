@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useOrders } from '@/contexts/OrdersContext'
 import { ArrowLeft, User, Phone, Mail, MapPin, Calendar, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea'
 
 const PlaceOrderPage = () => {
   const navigate = useNavigate()
-  const { items, getTotalPrice, setDeliveryDetails } = useCart()
+  const { items, getTotalPrice, setDeliveryDetails, clearCart } = useCart()
   const { user } = useAuth()
+  const { placeOrder } = useOrders()
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -26,6 +28,7 @@ const PlaceOrderPage = () => {
   const [errors, setErrors] = useState({})
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
+  const [orderId, setOrderId] = useState(null)
 
   // Pre-fill form with user data if available
   useEffect(() => {
@@ -109,16 +112,46 @@ const PlaceOrderPage = () => {
     if (validateForm()) {
       setIsProcessing(true)
       
-      // Simulate order processing
-      setTimeout(() => {
-        setIsProcessing(false)
-        setOrderPlaced(true)
+      try {
+        // Get leadId from cart items (assuming first item has leadId from addToCart)
+        const leadId = items[0]?.leadId
         
-        // Clear cart and redirect after success
-        setTimeout(() => {
-          navigate('/')
-        }, 3000)
-      }, 2000)
+        if (!leadId) {
+          throw new Error('No order found. Please add items to cart first.')
+        }
+
+        // Prepare order data for API
+        const orderData = {
+          deliveryAddress: `${formData.deliveryAddress}, ${formData.city}, ${formData.state} - ${formData.pinCode}`,
+          deliveryPincode: formData.pinCode,
+          deliveryExpectedDate: formData.preferredDeliveryDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          receiverMobileNum: formData.phoneNumber
+        }
+
+        // Call placeOrder API
+        const response = await placeOrder(leadId, orderData)
+        
+        if (response) {
+          setOrderId(leadId)
+          setIsProcessing(false)
+          setOrderPlaced(true)
+          
+          // Clear cart and redirect to orders page after success
+          setTimeout(() => {
+            clearCart()
+            navigate('/orders', { 
+              state: { 
+                message: 'Order placed successfully!',
+                orderId: leadId 
+              } 
+            })
+          }, 3000)
+        }
+      } catch (error) {
+        console.error('Error placing order:', error)
+        setIsProcessing(false)
+        setErrors({ general: error.message || 'Failed to place order. Please try again.' })
+      }
     }
   }
 
@@ -134,7 +167,7 @@ const PlaceOrderPage = () => {
             Your order has been confirmed and will be delivered soon.
           </p>
           <p className="text-sm text-gray-500">
-            Redirecting to homepage...
+            Redirecting to orders page...
           </p>
         </div>
       </div>
@@ -364,6 +397,10 @@ const PlaceOrderPage = () => {
           >
             {isProcessing ? 'Placing Order...' : 'Place Order'}
           </Button>
+          
+          {errors.general && (
+            <p className="text-red-500 text-sm mt-2 text-center">{errors.general}</p>
+          )}
         </form>
       </div>
     </div>

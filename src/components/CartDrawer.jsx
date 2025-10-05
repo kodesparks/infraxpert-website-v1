@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 
 const CartDrawer = ({ isOpen, onClose }) => {
   const { items, removeFromCart, updateQuantity, getTotalPrice, setDeliveryDetails, clearCart } = useCart()
-  const { createOrder } = useOrders()
+  const { createOrder, placeOrder } = useOrders()
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState('cart') // 'cart' or 'delivery'
   const [formData, setFormData] = useState({
@@ -24,11 +24,11 @@ const CartDrawer = ({ isOpen, onClose }) => {
   })
   const [errors, setErrors] = useState({})
 
-  const handleQuantityChange = (productId, newQuantity) => {
+  const handleQuantityChange = (productId, newQuantity, leadId = null) => {
     if (newQuantity < 1) {
-      removeFromCart(productId)
+      removeFromCart(productId, leadId)
     } else {
-      updateQuantity(productId, newQuantity)
+      updateQuantity(productId, newQuantity, leadId)
     }
   }
 
@@ -96,40 +96,80 @@ const CartDrawer = ({ isOpen, onClose }) => {
     return Object.keys(newErrors).length === 0
   }
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (validateForm()) {
-      // Set delivery details in cart context
-      setDeliveryDetails(formData)
-      
-      // Create order in orders context
-      const cartData = {
-        items: items,
-        totalAmount: getTotalPrice(),
-        deliveryCharges: 0, // Will be calculated in payment page
-        finalAmount: getTotalPrice()
+      try {
+        // Set delivery details in cart context
+        setDeliveryDetails(formData)
+        
+        // Check if we have items with leadId (from API)
+        const hasApiOrders = items.some(item => item.leadId)
+        
+        if (hasApiOrders) {
+          // Use API to place order
+          const leadId = items.find(item => item.leadId)?.leadId
+          
+          if (leadId) {
+            const orderData = {
+              deliveryAddress: `${formData.deliveryAddress}, ${formData.city}, ${formData.state}`,
+              deliveryPincode: formData.pinCode,
+              deliveryExpectedDate: formData.preferredDeliveryDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+              receiverMobileNum: formData.phoneNumber
+            }
+            
+            // Place order via API
+            const order = await placeOrder(leadId, orderData)
+            
+            // Close drawer and navigate to orders page
+            onClose()
+            navigate('/orders', { 
+              state: { 
+                message: 'Order placed successfully!',
+                orderId: leadId 
+              } 
+            })
+          }
+        } else {
+          // Fallback to legacy order creation
+          const cartData = {
+            items: items,
+            totalAmount: getTotalPrice(),
+            deliveryCharges: 0, // Will be calculated in payment page
+            finalAmount: getTotalPrice()
+          }
+          
+          const paymentData = {
+            method: 'pending' // Will be set in payment page
+          }
+          
+          const deliveryData = {
+            name: formData.fullName,
+            phone: formData.phoneNumber,
+            email: formData.email,
+            address: formData.deliveryAddress,
+            city: formData.city,
+            state: formData.state,
+            pincode: formData.pinCode,
+            preferredDeliveryDate: formData.preferredDeliveryDate
+          }
+          
+          // Create the order
+          const order = createOrder(cartData, paymentData, deliveryData)
+          
+          // Close drawer and navigate to orders page
+          onClose()
+          navigate('/orders', { 
+            state: { 
+              message: 'Order placed successfully!',
+              orderId: order.id 
+            } 
+          })
+        }
+      } catch (error) {
+        console.error('Error placing order:', error)
+        // Handle error - show error message to user
+        setErrors({ general: 'Failed to place order. Please try again.' })
       }
-      
-      const paymentData = {
-        method: 'pending' // Will be set in payment page
-      }
-      
-      const deliveryData = {
-        name: formData.fullName,
-        phone: formData.phoneNumber,
-        email: formData.email,
-        address: formData.deliveryAddress,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pinCode,
-        preferredDeliveryDate: formData.preferredDeliveryDate
-      }
-      
-      // Create the order
-      const order = createOrder(cartData, paymentData, deliveryData)
-      
-      // Close drawer and navigate to payment
-      onClose()
-      navigate('/payment', { state: { orderId: order.id } })
     }
   }
 
@@ -211,14 +251,14 @@ const CartDrawer = ({ isOpen, onClose }) => {
                     {/* Quantity Controls */}
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                        onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.leadId)}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                       >
                         <Minus className="w-4 h-4 text-gray-600" />
                       </button>
                       <span className="w-8 text-center font-medium">{item.quantity}</span>
                       <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                        onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.leadId)}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                       >
                         <Plus className="w-4 h-4 text-gray-600" />
@@ -227,7 +267,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
 
                     {/* Remove Button */}
                     <button
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item.id, item.leadId)}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
