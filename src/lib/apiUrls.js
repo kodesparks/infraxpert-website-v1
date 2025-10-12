@@ -42,6 +42,7 @@ export const URLS = {
   placeOrder: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/place`,
   processPayment: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/payment`,
   getPaymentStatus: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/payment`,
+  getOrderTracking: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/tracking`,
   
   // Vendor Order APIs
   getVendorOrders: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/vendor/orders`,

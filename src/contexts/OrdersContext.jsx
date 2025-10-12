@@ -6,8 +6,10 @@ export const ORDER_STATUS = {
   PENDING: 'pending',
   CONFIRMED: 'vendor_accepted',
   PROCESSING: 'payment_done',
-  SHIPPED: 'shipped',
+  ORDER_CONFIRMED: 'order_confirmed',
+  TRUCK_LOADING: 'truck_loading',
   IN_TRANSIT: 'in_transit',
+  SHIPPED: 'shipped',
   OUT_FOR_DELIVERY: 'out_for_delivery',
   DELIVERED: 'delivered',
   CANCELLED: 'cancelled',
@@ -42,10 +44,22 @@ export const ORDER_STATUS_INFO = {
     description: 'Vendor accepted the order - Payment required'
   },
   [ORDER_STATUS.PROCESSING]: {
-    label: 'Order Confirmed',
+    label: 'Payment Completed',
     color: 'purple',
     icon: 'CreditCard',
-    description: 'Payment processed successfully - Order confirmed'
+    description: 'Payment processed successfully'
+  },
+  [ORDER_STATUS.ORDER_CONFIRMED]: {
+    label: 'Order Confirmed',
+    color: 'green',
+    icon: 'CheckCircle',
+    description: 'Your order is confirmed and being prepared for dispatch'
+  },
+  [ORDER_STATUS.TRUCK_LOADING]: {
+    label: 'Loading for Dispatch',
+    color: 'orange',
+    icon: 'Truck',
+    description: 'Your order is being loaded for dispatch'
   },
   [ORDER_STATUS.SHIPPED]: {
     label: 'Shipped',
@@ -447,6 +461,8 @@ export const OrdersProvider = ({ children }) => {
       pending: 0,
       confirmed: 0,
       processing: 0,
+      orderConfirmed: 0,
+      truckLoading: 0,
       shipped: 0,
       inTransit: 0,
       outForDelivery: 0,
@@ -464,6 +480,12 @@ export const OrdersProvider = ({ children }) => {
           break
         case ORDER_STATUS.PROCESSING:
           stats.processing++
+          break
+        case ORDER_STATUS.ORDER_CONFIRMED:
+          stats.orderConfirmed++
+          break
+        case ORDER_STATUS.TRUCK_LOADING:
+          stats.truckLoading++
           break
         case ORDER_STATUS.SHIPPED:
           stats.shipped++

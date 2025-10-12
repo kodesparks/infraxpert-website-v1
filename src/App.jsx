@@ -21,6 +21,7 @@ import DeliveryDetailsPage from '@/pages/DeliveryDetailsPage'
 import PaymentPage from '@/pages/PaymentPage'
 import PlaceOrderPage from '@/pages/PlaceOrderPage'
 import OrdersPage from '@/pages/OrdersPage'
+import OrderTrackingPage from '@/pages/OrderTrackingPage'
 import './App.css'
 
 function App() {
@@ -109,6 +110,13 @@ function App() {
             <MainLayout>
               <ProtectedRoute>
                 <PlaceOrderPage />
+              </ProtectedRoute>
+            </MainLayout>
+          } />
+          <Route path="/orders/track/:leadId" element={
+            <MainLayout>
+              <ProtectedRoute>
+                <OrderTrackingPage />
               </ProtectedRoute>
             </MainLayout>
           } />

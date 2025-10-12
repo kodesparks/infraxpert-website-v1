@@ -137,6 +137,21 @@ export const getPaymentStatus = async (leadId) => {
   }
 }
 
+export const getOrderTracking = async (leadId) => {
+  try {
+    const response = await apiRequest({
+      url: URLS.getOrderTracking(leadId),
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie"
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching order tracking:', error)
+    throw error
+  }
+}
+
 // Vendor Order APIs
 export const getVendorOrders = async (params = {}) => {
   try {

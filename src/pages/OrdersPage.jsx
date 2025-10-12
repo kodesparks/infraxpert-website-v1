@@ -92,12 +92,14 @@ const OrdersPage = () => {
   // Get order statistics
   const stats = getOrderStats()
 
-  // Customer-focused status filters
+  // Customer-focused status filters - properly mapped to API statuses
   const statusFilters = [
     { value: 'all', label: 'All Orders', count: stats.total, icon: Package, color: 'blue' },
     { value: ORDER_STATUS.PENDING, label: 'Order Placed', count: stats.pending, icon: Clock, color: 'yellow' },
-    { value: ORDER_STATUS.CONFIRMED, label: 'Confirmed', count: stats.confirmed, icon: CheckCircle, color: 'blue' },
-    { value: ORDER_STATUS.PROCESSING, label: 'Preparing', count: stats.processing, icon: RefreshCw, color: 'purple' },
+    { value: ORDER_STATUS.CONFIRMED, label: 'Vendor Accepted', count: stats.confirmed, icon: CheckCircle, color: 'blue' },
+    { value: ORDER_STATUS.PROCESSING, label: 'Payment Done', count: stats.processing, icon: RefreshCw, color: 'purple' },
+    { value: ORDER_STATUS.ORDER_CONFIRMED, label: 'Order Confirmed', count: stats.orderConfirmed, icon: CheckCircle, color: 'green' },
+    { value: ORDER_STATUS.TRUCK_LOADING, label: 'Loading', count: stats.truckLoading, icon: Truck, color: 'orange' },
     { value: ORDER_STATUS.SHIPPED, label: 'Shipped', count: stats.shipped, icon: Truck, color: 'indigo' },
     { value: ORDER_STATUS.IN_TRANSIT, label: 'On the Way', count: stats.inTransit, icon: Truck, color: 'blue' },
     { value: ORDER_STATUS.OUT_FOR_DELIVERY, label: 'Out for Delivery', count: stats.outForDelivery, icon: Truck, color: 'green' },
@@ -140,6 +142,24 @@ const OrdersPage = () => {
         totalAmount: order.finalAmount || order.totalAmount
       } 
     })
+  }
+
+  // Handle track order
+  const handleTrackOrder = (order) => {
+    navigate(`/orders/track/${order.id}`)
+  }
+
+  // Check if order can be tracked (order_confirmed onwards)
+  const canTrackOrder = (status) => {
+    const trackableStatuses = [
+      ORDER_STATUS.ORDER_CONFIRMED,
+      ORDER_STATUS.TRUCK_LOADING,
+      ORDER_STATUS.IN_TRANSIT,
+      ORDER_STATUS.SHIPPED,
+      ORDER_STATUS.OUT_FOR_DELIVERY,
+      ORDER_STATUS.DELIVERED
+    ]
+    return trackableStatuses.includes(status)
   }
 
   // Load detailed order information
@@ -252,7 +272,18 @@ const OrdersPage = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
+          {canTrackOrder(order.status) && (
+            <Button
+              onClick={() => handleTrackOrder(order)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <TruckIcon className="w-4 h-4" />
+              Track Order
+            </Button>
+          )}
           <button
             onClick={() => handleViewDetails(order)}
             className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
