@@ -11,7 +11,15 @@ export const addToCart = async (cartData) => {
       method: 'post',
       setAuthznHeader: true,
       sessionSource: "cookie",
-      data: cartData
+      data: {
+        itemCode: cartData.itemCode,
+        qty: cartData.qty,
+        deliveryPincode: cartData.deliveryPincode,
+        deliveryAddress: cartData.deliveryAddress,
+        deliveryExpectedDate: cartData.deliveryExpectedDate,
+        custPhoneNum: cartData.custPhoneNum,
+        receiverMobileNum: cartData.receiverMobileNum
+      }
     })
     return response.data
   } catch (error) {
@@ -43,6 +51,52 @@ export const getCustomerOrders = async (params = {}) => {
   }
 }
 
+// Cart-specific API functions
+export const getCartItems = async () => {
+  try {
+    const response = await apiRequest({
+      url: `${URLS.getCustomerOrders}?status=pending`,
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie"
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching cart items:', error)
+    throw error
+  }
+}
+
+export const getCartSummary = async () => {
+  try {
+    const response = await apiRequest({
+      url: URLS.getCartSummary,
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie"
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching cart summary:', error)
+    throw error
+  }
+}
+
+export const clearCart = async () => {
+  try {
+    const response = await apiRequest({
+      url: URLS.clearCart,
+      method: 'delete',
+      setAuthznHeader: true,
+      sessionSource: "cookie"
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error clearing cart:', error)
+    throw error
+  }
+}
+
 export const getOrderDetails = async (leadId) => {
   try {
     const response = await apiRequest({
@@ -65,7 +119,9 @@ export const updateOrder = async (leadId, updateData) => {
       method: 'put',
       setAuthznHeader: true,
       sessionSource: "cookie",
-      data: updateData
+      data: {
+        items: updateData.items || []
+      }
     })
     return response.data
   } catch (error) {
@@ -74,18 +130,36 @@ export const updateOrder = async (leadId, updateData) => {
   }
 }
 
-export const removeFromCart = async (leadId, itemCode) => {
+export const removeFromCart = async (leadId) => {
   try {
     const response = await apiRequest({
       url: URLS.removeFromCart(leadId),
       method: 'delete',
       setAuthznHeader: true,
-      sessionSource: "cookie",
-      data: { itemCode }
+      sessionSource: "cookie"
     })
     return response.data
   } catch (error) {
-    console.error('Error removing item from cart:', error)
+    console.error('Error removing order from cart:', error)
+    throw error
+  }
+}
+
+// Remove specific item from cart order (alternative approach)
+export const removeSpecificItemFromCart = async (leadId, itemCode) => {
+  try {
+    const response = await apiRequest({
+      url: URLS.removeSpecificItemFromCart(leadId),
+      method: 'delete',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      data: {
+        itemCode: itemCode
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error removing specific item from cart:', error)
     throw error
   }
 }
@@ -97,7 +171,12 @@ export const placeOrder = async (leadId, orderData) => {
       method: 'post',
       setAuthznHeader: true,
       sessionSource: "cookie",
-      data: orderData
+      data: {
+        deliveryAddress: orderData.deliveryAddress,
+        deliveryPincode: orderData.deliveryPincode,
+        deliveryExpectedDate: orderData.deliveryExpectedDate,
+        receiverMobileNum: orderData.receiverMobileNum
+      }
     })
     return response.data
   } catch (error) {
@@ -440,4 +519,58 @@ export const PAYMENT_MODES = {
   'online': 'Online',
   'offline': 'Offline',
   'cash_on_delivery': 'Cash on Delivery'
+}
+
+// Order Change APIs
+export const checkChangeEligibility = async (leadId) => {
+  try {
+    const response = await apiRequest({
+      url: `${URLS.getCustomerOrders}/${leadId}/change-history`,
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie"
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error checking change eligibility:', error)
+    throw error
+  }
+}
+
+export const changeDeliveryAddress = async (leadId, addressData) => {
+  try {
+    const response = await apiRequest({
+      url: `${URLS.getCustomerOrders}/${leadId}/address`,
+      method: 'put',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      data: {
+        newAddress: addressData.newAddress,
+        reason: addressData.reason || ''
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error changing delivery address:', error)
+    throw error
+  }
+}
+
+export const changeDeliveryDate = async (leadId, dateData) => {
+  try {
+    const response = await apiRequest({
+      url: `${URLS.getCustomerOrders}/${leadId}/delivery-date`,
+      method: 'put',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      data: {
+        newDeliveryDate: dateData.newDeliveryDate,
+        reason: dateData.reason || ''
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error changing delivery date:', error)
+    throw error
+  }
 }

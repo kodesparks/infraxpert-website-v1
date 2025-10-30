@@ -1,25 +1,44 @@
 import React, { useState } from 'react'
-import { X, MapPin, Calculator, Truck } from 'lucide-react'
+import { X, MapPin, Calculator, Truck, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { validatePincode } from '@/services/location'
 
 const PincodePopup = ({ isOpen, onClose, onPincodeSubmit, currentPincode }) => {
   const [pincode, setPincode] = useState(currentPincode || '')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!pincode.trim()) return
 
+    // Basic pincode format validation
+    const pincodeRegex = /^[1-9][0-9]{5}$/
+    if (!pincodeRegex.test(pincode)) {
+      setError('Please enter a valid 6-digit pincode')
+      return
+    }
+
     setIsLoading(true)
+    setError('')
+
     try {
-      // Simulate API call for distance calculation
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      onPincodeSubmit(pincode.trim())
-      onClose()
+      const response = await validatePincode(pincode.trim())
+      
+      if (response.success && response.data.isValid) {
+        onPincodeSubmit({
+          pincode: pincode.trim(),
+          location: response.data.location,
+        })
+        onClose()
+      } else {
+        setError(response.error || 'Invalid pincode')
+      }
     } catch (error) {
-      console.error('Error calculating distance:', error)
+      console.error('Error validating pincode:', error)
+      setError(error.response?.data?.error || 'Failed to validate pincode')
     } finally {
       setIsLoading(false)
     }
@@ -27,6 +46,7 @@ const PincodePopup = ({ isOpen, onClose, onPincodeSubmit, currentPincode }) => {
 
   const handleClose = () => {
     setPincode(currentPincode || '')
+    setError('')
     onClose()
   }
 
@@ -77,6 +97,12 @@ const PincodePopup = ({ isOpen, onClose, onPincodeSubmit, currentPincode }) => {
             <p className="text-xs text-gray-500">
               Enter 6-digit pincode to calculate delivery charges
             </p>
+            {error && (
+              <div className="flex items-center space-x-2 text-red-600 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
           </div>
 
           {/* Info Cards */}

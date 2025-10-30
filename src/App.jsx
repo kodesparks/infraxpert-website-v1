@@ -3,8 +3,8 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CartProvider } from '@/contexts/CartContext'
-import { InventoryProvider } from '@/contexts/InventoryContext'
 import { OrdersProvider } from '@/contexts/OrdersContext'
+import { PincodeProvider } from '@/contexts/PincodeContext'
 import MainLayout from '@/layouts/MainLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -28,8 +28,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <CartProvider>
-          <OrdersProvider>
+        <PincodeProvider>
+          <CartProvider>
+            <OrdersProvider>
             <Routes>
           {/* Authentication pages - No header */}
           <Route path="/login" element={
@@ -57,9 +58,7 @@ function App() {
           <Route path="/products" element={
             <MainLayout>
               <ProtectedRoute>
-                <InventoryProvider>
-                  <ProductsPage />
-                </InventoryProvider>
+                <ProductsPage />
               </ProtectedRoute>
             </MainLayout>
           } />
@@ -121,8 +120,9 @@ function App() {
             </MainLayout>
           } />
           </Routes>
-          </OrdersProvider>
-        </CartProvider>
+            </OrdersProvider>
+          </CartProvider>
+        </PincodeProvider>
       </AuthProvider>
     </Router>
   )

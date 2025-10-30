@@ -64,14 +64,20 @@ export async function getInventoryItem(itemId) {
 }
 
 /**
- * Get pricing information for a specific item
+ * Get pricing information for a specific item with delivery charges
  * @param {string} itemId - MongoDB ObjectId of the inventory item
- * @returns {Promise<Object>} Pricing data
+ * @param {string} pincode - Pincode for delivery calculation (optional)
+ * @returns {Promise<Object>} Pricing data with delivery charges
  */
-export async function getItemPricing(itemId) {
+export async function getItemPricing(itemId, pincode = null) {
   try {
+    const queryParams = new URLSearchParams();
+    if (pincode) queryParams.append('pincode', pincode);
+
+    const url = `${URLS.getItemPricing(itemId)}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
     const response = await apiRequest({
-      url: URLS.getInventoryPricing(itemId),
+      url: url,
       method: 'get',
       setAuthznHeader: true,
       sessionSource: "cookie",
@@ -341,3 +347,69 @@ export async function getCompleteProductDetails(itemId) {
     throw error;
   }
 }
+
+/**
+ * Get inventory items with pricing and delivery charges
+ * @param {Object} params - Query parameters
+ * @param {string} params.pincode - Pincode for delivery calculation
+ * @param {number} params.page - Page number (default: 1)
+ * @param {number} params.limit - Items per page (default: 10)
+ * @param {string} params.category - Filter by category
+ * @returns {Promise<Object>} Inventory items with pricing and delivery
+ */
+export async function getInventoryWithPricing(params = {}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    // Add query parameters according to new API structure
+    if (params.pincode) queryParams.append('pincode', params.pincode);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.category) queryParams.append('category', params.category);
+    if (params.subCategory) queryParams.append('subCategory', params.subCategory);
+    if (params.search) queryParams.append('search', params.search);
+
+    const url = `${URLS.getInventoryPricing}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    const response = await apiRequest({
+      url: url,
+      method: 'get',
+      setAuthznHeader: false, // No authentication required for browsing products
+      sessionSource: "cookie",
+    });
+    
+    // Return the response data directly as per new API structure
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching inventory with pricing:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get pricing information for a specific item with delivery charges
+ * @param {string} itemId - Item ID
+ * @param {string} pincode - 6 digit pincode
+ * @returns {Promise<Object>} Item pricing with delivery charges
+ */
+export async function getItemPricingWithDelivery(itemId, pincode) {
+  try {
+    const queryParams = new URLSearchParams();
+    if (pincode) queryParams.append('pincode', pincode);
+
+    const url = `${URLS.getItemPricing(itemId)}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    const response = await apiRequest({
+      url: url,
+      method: 'get',
+      setAuthznHeader: false, // No authentication required for browsing products
+      sessionSource: "cookie",
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching item pricing with delivery:', error);
+    throw error;
+  }
+}
+

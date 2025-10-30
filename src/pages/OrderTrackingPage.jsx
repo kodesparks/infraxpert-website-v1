@@ -366,25 +366,95 @@ const OrderTrackingPage = () => {
                 <Truck className="w-5 h-5" />
                 Delivery Information
               </h3>
-              <div className="space-y-3">
-                {tracking.delivery.trackingNumber && (
-                  <div>
-                    <p className="text-sm text-gray-600">Tracking Number</p>
-                    <p className="font-semibold text-gray-800">{tracking.delivery.trackingNumber}</p>
-                  </div>
-                )}
-                {tracking.delivery.courierService && (
-                  <div>
-                    <p className="text-sm text-gray-600">Courier Service</p>
-                    <p className="font-semibold text-gray-800">{tracking.delivery.courierService}</p>
-                  </div>
-                )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {tracking.delivery.deliveryStatus && (
                   <div>
-                    <p className="text-sm text-gray-600">Delivery Status</p>
+                    <p className="text-sm text-gray-600">Status</p>
                     <p className="font-semibold text-gray-800 capitalize">
-                      {tracking.delivery.deliveryStatus.replace(/_/g, ' ')}
+                      {String(tracking.delivery.deliveryStatus).replace(/_/g, ' ')}
                     </p>
+                  </div>
+                )}
+                {tracking.delivery.driverName && (
+                  <div>
+                    <p className="text-sm text-gray-600">Driver Name</p>
+                    <p className="font-semibold text-gray-800">{tracking.delivery.driverName}</p>
+                  </div>
+                )}
+                {tracking.delivery.driverPhone && (
+                  <div className="flex items-start gap-2">
+                    <Phone className="w-4 h-4 text-gray-400 mt-1" />
+                    <div>
+                      <p className="text-sm text-gray-600">Driver Phone</p>
+                      <p className="font-semibold text-gray-800">{tracking.delivery.driverPhone}</p>
+                    </div>
+                  </div>
+                )}
+                {tracking.delivery.driverLicenseNo && (
+                  <div>
+                    <p className="text-sm text-gray-600">Driver License</p>
+                    <p className="font-semibold text-gray-800">{tracking.delivery.driverLicenseNo}</p>
+                  </div>
+                )}
+                {tracking.delivery.truckNumber && (
+                  <div>
+                    <p className="text-sm text-gray-600">Truck Number</p>
+                    <p className="font-semibold text-gray-800">{tracking.delivery.truckNumber}</p>
+                  </div>
+                )}
+                {tracking.delivery.vehicleType && (
+                  <div>
+                    <p className="text-sm text-gray-600">Vehicle Type</p>
+                    <p className="font-semibold text-gray-800">{tracking.delivery.vehicleType}</p>
+                  </div>
+                )}
+                {tracking.delivery.capacityTons !== undefined && tracking.delivery.capacityTons !== null && (
+                  <div>
+                    <p className="text-sm text-gray-600">Vehicle Capacity (tons)</p>
+                    <p className="font-semibold text-gray-800">{tracking.delivery.capacityTons}</p>
+                  </div>
+                )}
+                {tracking.delivery.estimatedArrival && (
+                  <div>
+                    <p className="text-sm text-gray-600">Estimated Arrival</p>
+                    <p className="font-semibold text-gray-800">{new Date(tracking.delivery.estimatedArrival).toLocaleString()}</p>
+                  </div>
+                )}
+                {tracking.delivery.startTime && (
+                  <div>
+                    <p className="text-sm text-gray-600">Start Time</p>
+                    <p className="font-semibold text-gray-800">{new Date(tracking.delivery.startTime).toLocaleString()}</p>
+                  </div>
+                )}
+                {(tracking.delivery.address || tracking.delivery.pincode) && (
+                  <div className="flex items-start gap-2 sm:col-span-2">
+                    <MapPin className="w-4 h-4 text-gray-400 mt-1" />
+                    <div>
+                      <p className="text-sm text-gray-600">Delivery To</p>
+                      <p className="font-semibold text-gray-800">
+                        {tracking.delivery.address} {tracking.delivery.pincode ? `( ${tracking.delivery.pincode} )` : ''}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {tracking.delivery.lastLocation?.address && (
+                  <div className="sm:col-span-2">
+                    <p className="text-sm text-gray-600">Last Known Location</p>
+                    <p className="font-semibold text-gray-800">{tracking.delivery.lastLocation.address}</p>
+                  </div>
+                )}
+                {(tracking.delivery.lastLocation?.lat !== undefined || tracking.delivery.lastLocation?.lng !== undefined) && (
+                  <div className="sm:col-span-2">
+                    <p className="text-sm text-gray-600">Coordinates</p>
+                    <p className="font-semibold text-gray-800">
+                      {tracking.delivery.lastLocation?.lat ?? '—'}, {tracking.delivery.lastLocation?.lng ?? '—'}
+                    </p>
+                  </div>
+                )}
+                {tracking.delivery.deliveryNotes && (
+                  <div className="sm:col-span-2">
+                    <p className="text-sm text-gray-600">Notes</p>
+                    <p className="font-semibold text-gray-800">{tracking.delivery.deliveryNotes}</p>
                   </div>
                 )}
               </div>

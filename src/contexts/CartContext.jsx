@@ -25,7 +25,7 @@ const cartReducer = (state, action) => {
     case 'REMOVE_FROM_CART':
       return {
         ...state,
-        items: state.items.filter(item => item.id !== action.payload)
+        items: state.items.filter(item => item.leadId !== action.payload)
       }
     
     case 'UPDATE_QUANTITY':
@@ -34,6 +34,22 @@ const cartReducer = (state, action) => {
         items: state.items.map(item =>
           item.id === action.payload.id
             ? { ...item, quantity: Math.max(1, action.payload.quantity) }
+            : item
+        )
+      }
+    
+    case 'UPDATE_QUANTITY_WITH_API_DATA':
+      return {
+        ...state,
+        items: state.items.map(item =>
+          item.id === action.payload.id
+            ? { 
+                ...item, 
+                quantity: Math.max(1, action.payload.quantity),
+                totalPrice: action.payload.totalPrice,
+                deliveryCharges: action.payload.deliveryCharges,
+                orderStatus: action.payload.orderStatus
+              }
             : item
         )
       }
@@ -85,27 +101,39 @@ export const CartProvider = ({ children }) => {
       const cartData = {
         itemCode: product.id,
         qty: product.quantity || 1,
+        deliveryPincode: deliveryData.deliveryPincode || product.deliveryPincode || '',
         deliveryAddress: deliveryData.deliveryAddress || '',
-        deliveryPincode: deliveryData.deliveryPincode || '',
         deliveryExpectedDate: deliveryData.deliveryExpectedDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
         custPhoneNum: deliveryData.custPhoneNum || '',
         receiverMobileNum: deliveryData.receiverMobileNum || deliveryData.custPhoneNum || ''
       }
 
+      // Debug: Log the cart data being sent to API
+      console.log('🛒 Cart Data being sent to API:', cartData)
+      
       // Call API to add to cart
       const response = await orderService.addToCart(cartData)
       
       if (response && response.order) {
-        // Update local cart state with API response
+        // Update local cart state with API response data
         const cartItem = {
           id: product.id,
           name: product.name,
           image: product.image,
-          currentPrice: product.currentPrice,
+          currentPrice: product.currentPrice, // Base price
+          totalPrice: response.order.totalAmount, // Total amount including delivery
+          deliveryCharges: response.order.deliveryCharges, // Delivery charges
           quantity: product.quantity || 1,
           leadId: response.order.leadId,
-          orderNumber: response.order.formattedLeadId
+          orderNumber: response.order.formattedLeadId,
+          // Additional order data from API
+          orderStatus: response.order.orderStatus,
+          vendorId: response.order.vendorId,
+          deliveryDetails: response.order.deliveryDetails
         }
+        
+        // Debug: Log the cart item being added
+        console.log('🛒 Cart item being added:', cartItem)
         
         dispatch({ type: 'ADD_TO_CART', payload: cartItem })
         return response.order
@@ -118,19 +146,19 @@ export const CartProvider = ({ children }) => {
     }
   }
 
-  const removeFromCart = async (productId, leadId = null) => {
+  const removeFromCart = async (leadId) => {
     try {
       if (leadId) {
-        // Call API to remove from cart - pass only the item ID string
-        await orderService.removeFromCart(leadId, productId)
+        // Call API to remove order from cart
+        await orderService.removeFromCart(leadId)
       }
       
-      // Update local cart state
-      dispatch({ type: 'REMOVE_FROM_CART', payload: productId })
+      // Update local cart state - remove all items with this leadId
+      dispatch({ type: 'REMOVE_FROM_CART', payload: leadId })
     } catch (error) {
       console.error('Error removing from cart via API:', error)
       // Fallback to local cart if API fails
-      dispatch({ type: 'REMOVE_FROM_CART', payload: productId })
+      dispatch({ type: 'REMOVE_FROM_CART', payload: leadId })
       throw error
     }
   }
@@ -142,13 +170,30 @@ export const CartProvider = ({ children }) => {
         const updateData = {
           items: [{ itemCode: productId, qty: quantity }]
         }
-        await orderService.updateOrder(leadId, updateData)
+        const response = await orderService.updateOrder(leadId, updateData)
         
-        // Update local cart state after successful API call
-        dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity } })
+        // Debug: Log the update response
+        console.log('🔄 Quantity update response:', response)
+        
+        // Update local cart state with API response data
+        if (response && response.order) {
+          dispatch({ 
+            type: 'UPDATE_QUANTITY_WITH_API_DATA', 
+            payload: { 
+              id: productId, 
+              quantity,
+              totalPrice: response.order.totalAmount,
+              deliveryCharges: response.order.deliveryCharges,
+              orderStatus: response.order.orderStatus
+            } 
+          })
+        } else {
+          // Fallback to basic quantity update
+          dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity } })
+        }
       } else if (quantity <= 0) {
         // Remove item if quantity is 0 or negative
-        await removeFromCart(productId, leadId)
+        await removeFromCart(leadId)
       } else {
         // Update local cart state for items without leadId
         dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity } })
@@ -178,7 +223,11 @@ export const CartProvider = ({ children }) => {
   }
 
   const getTotalPrice = () => {
-    return state.items.reduce((total, item) => total + (item.currentPrice * item.quantity), 0)
+    return state.items.reduce((total, item) => {
+      // Use totalPrice from API response if available, otherwise fallback to currentPrice * quantity
+      const itemTotal = item.totalPrice || (item.currentPrice * item.quantity)
+      return total + itemTotal
+    }, 0)
   }
 
   const value = {

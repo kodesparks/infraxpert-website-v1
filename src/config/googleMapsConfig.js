@@ -1,0 +1,23 @@
+// Google Maps API Configuration
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyCvQvl8Tho4uPSGbI5LAgNB2sk6oWBh5Xw';
+
+// Google Maps API Configuration
+export const GOOGLE_MAPS_CONFIG = {
+  geocoding: {
+    baseUrl: 'https://maps.googleapis.com/maps/api/geocode/json',
+    apiKey: GOOGLE_MAPS_API_KEY,
+  },
+};
+
+// Environment configuration
+export const ENV_CONFIG = {
+  isDevelopment: process.env.NODE_ENV === 'development',
+  isProduction: process.env.NODE_ENV === 'production',
+  currentEnv: process.env.NODE_ENV || 'development',
+};
+
+// Logging configuration
+export const LOG_CONFIG = {
+  enableApiLogs: ENV_CONFIG.isDevelopment,
+  enableDebugLogs: ENV_CONFIG.isDevelopment,
+};

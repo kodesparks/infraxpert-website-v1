@@ -4,6 +4,7 @@ import * as orderService from '@/services/order'
 // Order status constants - mapped to API statuses
 export const ORDER_STATUS = {
   PENDING: 'pending',
+  ORDER_PLACED: 'order_placed',
   CONFIRMED: 'vendor_accepted',
   PROCESSING: 'payment_done',
   ORDER_CONFIRMED: 'order_confirmed',
@@ -32,10 +33,16 @@ export const UI_ORDER_STATUS = {
 // Order status display info
 export const ORDER_STATUS_INFO = {
   [ORDER_STATUS.PENDING]: {
-    label: 'Order Placed',
+    label: 'In Cart',
     color: 'yellow',
     icon: 'Clock',
-    description: 'Order received, awaiting vendor confirmation'
+    description: 'Item in cart, ready to place order'
+  },
+  [ORDER_STATUS.ORDER_PLACED]: {
+    label: 'Order Placed',
+    color: 'orange',
+    icon: 'Package',
+    description: 'Order placed, awaiting vendor confirmation'
   },
   [ORDER_STATUS.CONFIRMED]: {
     label: 'Vendor Accepted',
@@ -459,6 +466,7 @@ export const OrdersProvider = ({ children }) => {
     const stats = {
       total: state.orders.length,
       pending: 0,
+      orderPlaced: 0,
       confirmed: 0,
       processing: 0,
       orderConfirmed: 0,
@@ -474,6 +482,9 @@ export const OrdersProvider = ({ children }) => {
       switch (order.status) {
         case ORDER_STATUS.PENDING:
           stats.pending++
+          break
+        case ORDER_STATUS.ORDER_PLACED:
+          stats.orderPlaced++
           break
         case ORDER_STATUS.CONFIRMED:
           stats.confirmed++

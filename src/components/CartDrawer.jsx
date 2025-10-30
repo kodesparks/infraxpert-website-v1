@@ -1,16 +1,23 @@
-import React, { useState } from 'react'
-import { useCart } from '@/contexts/CartContext'
+import React, { useState, useEffect } from 'react'
 import { useOrders } from '@/contexts/OrdersContext'
+import { usePincode } from '@/contexts/PincodeContext'
 import { useNavigate } from 'react-router-dom'
 import { X, Plus, Minus, Trash2, ShoppingBag, User, Phone, Mail, MapPin, Calendar, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import * as orderService from '@/services/order'
 
 const CartDrawer = ({ isOpen, onClose }) => {
-  const { items, removeFromCart, updateQuantity, getTotalPrice, setDeliveryDetails, clearCart } = useCart()
   const { createOrder, placeOrder } = useOrders()
+  const { userPincode } = usePincode()
   const navigate = useNavigate()
+  
+  // Local state for cart management
+  const [cartItems, setCartItems] = useState([])
+  const [cartLoading, setCartLoading] = useState(false)
+  const [cartError, setCartError] = useState(null)
+  
   const [currentStep, setCurrentStep] = useState('cart') // 'cart' or 'delivery'
   const [formData, setFormData] = useState({
     fullName: '',
@@ -19,16 +26,178 @@ const CartDrawer = ({ isOpen, onClose }) => {
     deliveryAddress: '',
     city: '',
     state: '',
-    pinCode: '',
+    pinCode: userPincode || '',
     preferredDeliveryDate: ''
   })
   const [errors, setErrors] = useState({})
 
-  const handleQuantityChange = (productId, newQuantity, leadId = null) => {
+  // Fetch cart items when drawer opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🛒 Cart drawer opened, fetching cart items...')
+      fetchCartItems()
+    }
+  }, [isOpen])
+
+  // Update pincode when userPincode changes
+  useEffect(() => {
+    if (userPincode) {
+      setFormData(prev => ({
+        ...prev,
+        pinCode: userPincode
+      }))
+    }
+  }, [userPincode])
+
+  // Fetch cart items from API
+  const fetchCartItems = async () => {
+    try {
+      setCartLoading(true)
+      setCartError(null)
+      const response = await orderService.getCartItems()
+      
+      if (response && response.orders) {
+        console.log('🛒 Fetched cart orders:', response.orders.length)
+        // Transform API response to cart items format
+        const transformedItems = response.orders
+          .filter(order => order.orderStatus === 'pending') // Only show pending orders in cart
+          .map(order => {
+            const item = order.items[0] // Each order has one item
+            // Calculate delivery charges properly
+            const basePrice = item.unitPrice
+            const totalAmount = order.totalAmount
+            const calculatedDeliveryCharges = totalAmount > basePrice ? totalAmount - basePrice : 0
+            
+            const transformedItem = {
+              id: order.leadId, // Use leadId as unique identifier
+              name: item.itemCode.itemDescription,
+              image: item.itemCode.primaryImage,
+              currentPrice: item.unitPrice,
+              totalPrice: order.totalAmount,
+              deliveryCharges: calculatedDeliveryCharges, // Use calculated delivery charges
+              quantity: item.qty,
+              leadId: order.leadId,
+              orderNumber: order.leadId,
+              orderStatus: order.orderStatus,
+              vendorId: order.vendorId,
+              deliveryDetails: order.deliveryDetails,
+              itemCode: item.itemCode._id, // MongoDB ObjectId for API calls
+              category: item.itemCode.category,
+              unit: item.itemCode.subCategory
+            }
+          
+          console.log('🛒 Transformed item:', {
+            leadId: transformedItem.leadId,
+            itemCode: transformedItem.itemCode,
+            name: transformedItem.name
+          })
+          
+          return transformedItem
+        })
+        console.log('🛒 Transformed cart items:', transformedItems)
+        setCartItems(transformedItems)
+      } else {
+        setCartItems([])
+      }
+    } catch (error) {
+      console.error('Error fetching cart items:', error)
+      setCartError(error.message)
+      setCartItems([])
+    } finally {
+      setCartLoading(false)
+    }
+  }
+
+  // Calculate total price from cart items
+  const getTotalPrice = () => {
+    return cartItems.reduce((total, item) => total + (item.totalPrice || 0), 0)
+  }
+
+  // Calculate total items count
+  const getTotalItems = () => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0)
+  }
+
+  // Handle quantity change with API call
+  const handleQuantityChange = async (productId, newQuantity, leadId = null) => {
     if (newQuantity < 1) {
-      removeFromCart(productId, leadId)
+      await handleRemoveFromCart(leadId)
     } else {
-      updateQuantity(productId, newQuantity, leadId)
+      await handleUpdateQuantity(productId, newQuantity, leadId)
+    }
+  }
+
+  // Update quantity via API
+  const handleUpdateQuantity = async (productId, quantity, leadId) => {
+    try {
+      // Find the cart item to get the actual itemCode
+      const cartItem = cartItems.find(item => item.leadId === leadId)
+      if (!cartItem) {
+        console.error('❌ Cart item not found for leadId:', leadId)
+        return
+      }
+
+      const updateData = {
+        items: [{ itemCode: cartItem.itemCode, qty: quantity }]
+      }
+      
+      console.log('🔄 Updating quantity:')
+      console.log('  - leadId:', leadId)
+      console.log('  - itemCode (MongoDB ObjectId):', cartItem.itemCode)
+      console.log('  - quantity:', quantity)
+      console.log('  - payload:', updateData)
+      
+      const response = await orderService.updateOrder(leadId, updateData)
+      
+      if (response && response.order) {
+        // Update local cart state with API response
+        setCartItems(prevItems => 
+          prevItems.map(item => 
+            item.leadId === leadId 
+              ? {
+                  ...item,
+                  quantity: quantity,
+                  totalPrice: response.order.totalAmount,
+                  deliveryCharges: response.order.deliveryCharges
+                }
+              : item
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error)
+      // Refresh cart items on error
+      fetchCartItems()
+    }
+  }
+
+  // Remove item from cart via API
+  const handleRemoveFromCart = async (leadId) => {
+    try {
+      console.log('🗑️ Removing item from cart:', leadId)
+      await orderService.removeFromCart(leadId)
+      // Remove item from local state
+      setCartItems(prevItems => {
+        const filtered = prevItems.filter(item => item.leadId !== leadId)
+        console.log('✅ Item removed, remaining items:', filtered.length)
+        return filtered
+      })
+    } catch (error) {
+      console.error('❌ Error removing from cart:', error)
+      // Refresh cart items on error
+      fetchCartItems()
+    }
+  }
+
+  // Clear entire cart via API
+  const handleClearCart = async () => {
+    try {
+      await orderService.clearCart()
+      setCartItems([])
+    } catch (error) {
+      console.error('Error clearing cart:', error)
+      // Refresh cart items on error
+      fetchCartItems()
     }
   }
 
@@ -99,17 +268,9 @@ const CartDrawer = ({ isOpen, onClose }) => {
   const handlePlaceOrder = async () => {
     if (validateForm()) {
       try {
-        // Set delivery details in cart context
-        setDeliveryDetails(formData)
-        
-        // Check if we have items with leadId (from API)
-        const hasApiOrders = items.some(item => item.leadId)
-        
-        if (hasApiOrders) {
-          // Use API to place order
-          const leadId = items.find(item => item.leadId)?.leadId
-          
-          if (leadId) {
+        // Place orders for all cart items
+        const orderPromises = cartItems.map(async (item) => {
+          if (item.leadId) {
             const orderData = {
               deliveryAddress: `${formData.deliveryAddress}, ${formData.city}, ${formData.state}`,
               deliveryPincode: formData.pinCode,
@@ -118,53 +279,25 @@ const CartDrawer = ({ isOpen, onClose }) => {
             }
             
             // Place order via API
-            const order = await placeOrder(leadId, orderData)
-            
-            // Close drawer and navigate to orders page
-            onClose()
-            navigate('/orders', { 
-              state: { 
-                message: 'Order placed successfully!',
-                orderId: leadId 
-              } 
-            })
+            return await placeOrder(item.leadId, orderData)
           }
-        } else {
-          // Fallback to legacy order creation
-          const cartData = {
-            items: items,
-            totalAmount: getTotalPrice(),
-            deliveryCharges: 0, // Will be calculated in payment page
-            finalAmount: getTotalPrice()
-          }
-          
-          const paymentData = {
-            method: 'pending' // Will be set in payment page
-          }
-          
-          const deliveryData = {
-            name: formData.fullName,
-            phone: formData.phoneNumber,
-            email: formData.email,
-            address: formData.deliveryAddress,
-            city: formData.city,
-            state: formData.state,
-            pincode: formData.pinCode,
-            preferredDeliveryDate: formData.preferredDeliveryDate
-          }
-          
-          // Create the order
-          const order = createOrder(cartData, paymentData, deliveryData)
-          
-          // Close drawer and navigate to orders page
-          onClose()
-          navigate('/orders', { 
-            state: { 
-              message: 'Order placed successfully!',
-              orderId: order.id 
-            } 
-          })
-        }
+          return null
+        })
+        
+        // Wait for all orders to be placed
+        await Promise.all(orderPromises.filter(Boolean))
+        
+        // Refresh cart to get updated status (orders will no longer be 'pending')
+        await fetchCartItems()
+        
+        // Close drawer and navigate to orders page
+        onClose()
+        navigate('/orders', { 
+          state: { 
+            message: 'Order placed successfully!',
+            orderCount: cartItems.length
+          } 
+        })
       } catch (error) {
         console.error('Error placing order:', error)
         // Handle error - show error message to user
@@ -200,9 +333,22 @@ const CartDrawer = ({ isOpen, onClose }) => {
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
             )}
+            <ShoppingBag className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-bold text-gray-800">
               {currentStep === 'cart' ? 'Shopping Cart' : 'Delivery Details'}
             </h2>
+            {currentStep === 'cart' && (
+              <button
+                onClick={fetchCartItems}
+                disabled={cartLoading}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+                title="Refresh cart"
+              >
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -216,7 +362,24 @@ const CartDrawer = ({ isOpen, onClose }) => {
         <div className="flex-1 overflow-y-auto">
           {currentStep === 'cart' ? (
             // Cart Step
-            items.length === 0 ? (
+            cartLoading ? (
+              <div className="flex flex-col items-center justify-center h-full p-6">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-gray-600">Loading cart items...</p>
+              </div>
+            ) : cartError ? (
+              <div className="flex flex-col items-center justify-center h-full p-6">
+                <div className="text-red-500 mb-4">⚠️</div>
+                <p className="text-red-600 mb-2">Error loading cart</p>
+                <p className="text-gray-500 text-sm text-center">{cartError}</p>
+                <button 
+                  onClick={fetchCartItems}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : cartItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full p-6">
                 <ShoppingBag className="w-16 h-16 text-gray-300 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">Your cart is empty</h3>
@@ -226,8 +389,8 @@ const CartDrawer = ({ isOpen, onClose }) => {
               </div>
             ) : (
               <div className="p-6 space-y-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                {cartItems.map((item) => (
+                  <div key={item.leadId} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                     {/* Product Image */}
                     <div className="flex-shrink-0">
                       <img
@@ -244,8 +407,17 @@ const CartDrawer = ({ isOpen, onClose }) => {
                       </h3>
                       <p className="text-xs text-gray-600 mb-1">{item.brand}</p>
                       <p className="text-sm font-bold text-gray-800">
-                        ₹{item.currentPrice.toLocaleString()}{item.unit}
+                        ₹{(item.totalPrice || item.currentPrice).toLocaleString()}{item.unit}
                       </p>
+                      {item.deliveryCharges > 0 ? (
+                        <p className="text-xs text-gray-500">
+                          Base: ₹{item.currentPrice.toLocaleString()} + Delivery: ₹{item.deliveryCharges.toLocaleString()}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-green-600 font-medium">
+                          Free Delivery
+                        </p>
+                      )}
                     </div>
 
                     {/* Quantity Controls */}
@@ -267,7 +439,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
 
                     {/* Remove Button */}
                     <button
-                      onClick={() => removeFromCart(item.id, item.leadId)}
+                      onClick={() => handleRemoveFromCart(item.leadId)}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -422,8 +594,14 @@ const CartDrawer = ({ isOpen, onClose }) => {
                       onChange={handleInputChange}
                       placeholder="6-digit PIN code"
                       maxLength={6}
-                      className={errors.pinCode ? 'border-red-500' : ''}
+                      disabled={!!userPincode}
+                      className={`${errors.pinCode ? 'border-red-500' : ''} ${userPincode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     />
+                    {userPincode && (
+                      <p className="text-gray-500 text-xs mt-1">
+                        PIN code is set from your location selection
+                      </p>
+                    )}
                     {errors.pinCode && (
                       <p className="text-red-500 text-sm mt-1">{errors.pinCode}</p>
                     )}
@@ -453,7 +631,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        {currentStep === 'cart' && items.length > 0 && (
+        {currentStep === 'cart' && cartItems.length > 0 && (
           <div className="border-t border-gray-200 p-6 space-y-4">
             {/* Total */}
             <div className="flex justify-between items-center">

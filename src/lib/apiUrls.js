@@ -21,16 +21,11 @@ export const URLS = {
   // Inventory APIs
   getInventory: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory`,
   getInventoryItem: (id) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/${id}`,
-  getInventoryPricing: (id) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/${id}/price`,
-  getInventoryShipping: (id) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/${id}/shipping`,
-  getInventoryPromos: (id) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/${id}/promo`,
+  getInventoryPricing: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/pricing`,
+  getItemPricing: (id) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/pricing/${id}`,
   getInventoryImages: (id) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/${id}/images`,
   getInventoryCategories: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/categories`,
   getInventorySubcategories: (category) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/categories/${category}/subcategories`,
-  calculateShipping: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/shipping/calculate`,
-  calculatePromo: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/promo/calculate`,
-  getActivePromos: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/promo/active`,
-  getAllPrices: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory/price/list`,
   
   // Order Management APIs
   // Customer Order APIs
@@ -38,11 +33,16 @@ export const URLS = {
   getCustomerOrders: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders`,
   getOrderDetails: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}`,
   updateOrder: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}`,
-  removeFromCart: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/items`,
+  removeFromCart: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}`,
   placeOrder: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/place`,
   processPayment: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/payment`,
   getPaymentStatus: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/payment`,
   getOrderTracking: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/tracking`,
+  
+  // Cart-specific APIs
+  getCartSummary: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/summary`,
+  clearCart: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/clear`,
+  removeSpecificItemFromCart: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/items`,
   
   // Vendor Order APIs
   getVendorOrders: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/vendor/orders`,
@@ -70,6 +70,11 @@ export const URLS = {
   // Legacy Cart APIs (for backward compatibility)
   getCart: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart`,
   updateCart: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/cart/update`,
+  
+  // Location & Delivery APIs
+  validatePincode: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/location/validate-pincode`,
+  calculateDelivery: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/delivery/calculate`,
+  estimateDeliveryTime: (pincode) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/delivery/estimate-time/${pincode}`,
   
   // Contact APIs
   sendContactMessage: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/contact`,
