@@ -911,195 +911,198 @@ const OrdersPage = () => {
           })}
         </div>
 
-        {/* Order Flow Timeline & Search */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Order Flow Timeline */}
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">Order Flow</h3>
-              <div className="relative">
-                {/* Vertical Line */}
-                <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                
-                {/* Status Points */}
-                <div className="space-y-6">
-                  {statusFilters
-                    .filter(f => f.value !== 'all' && f.value !== ORDER_STATUS.CANCELLED)
-                    .map((filter, index, arr) => {
-                      const Icon = filter.icon
-                      const isActive = selectedStatus === filter.value
-                      // Check if this status should show as completed (any order at this status)
-                      const hasOrders = filter.count > 0
-                      
-                      // Determine line color - green if active or has orders
-                      const lineColor = isActive || hasOrders ? 'bg-green-500' : 'bg-gray-200'
+        {/* Two Column Layout: Order Flow (30%) + Orders (70%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+          {/* Left Sidebar: Order Flow & Search (30%) */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sticky top-6">
+              {/* Search Bar */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Search Orders</h3>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search your orders..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Order Flow Timeline */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Order Flow</h3>
+                <div className="relative">
+                  {/* Vertical Line */}
+                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                  
+                  {/* Status Points */}
+                  <div className="space-y-5">
+                    {statusFilters
+                      .filter(f => f.value !== 'all' && f.value !== ORDER_STATUS.CANCELLED)
+                      .map((filter, index, arr) => {
+                        const Icon = filter.icon
+                        const isActive = selectedStatus === filter.value
+                        // Check if this status should show as completed (any order at this status)
+                        const hasOrders = filter.count > 0
+                        
+                        // Determine line color - green if active or has orders
+                        const lineColor = isActive || hasOrders ? 'bg-green-500' : 'bg-gray-200'
+                        
+                        return (
+                          <div key={filter.value} className="relative flex items-center">
+                            {/* Status Circle */}
+                            <button
+                              onClick={() => setSelectedStatus(filter.value)}
+                              className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
+                                isActive
+                                  ? 'bg-green-500 border-green-600 shadow-lg scale-110'
+                                  : hasOrders
+                                  ? 'bg-green-500 border-green-600'
+                                  : 'bg-white border-gray-300 hover:border-gray-400'
+                              }`}
+                            >
+                              <Icon className={`w-4 h-4 ${
+                                isActive || hasOrders ? 'text-white' : 'text-gray-400'
+                              }`} />
+                            </button>
+                            
+                            {/* Status Label */}
+                            <div 
+                              className={`ml-3 flex-1 flex items-center justify-between p-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+                                isActive
+                                  ? 'bg-green-50 border-2 border-green-200'
+                                  : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                              }`}
+                              onClick={() => setSelectedStatus(filter.value)}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`font-medium text-xs truncate ${
+                                  isActive ? 'text-green-700' : hasOrders ? 'text-gray-700' : 'text-gray-500'
+                                }`}>
+                                  {filter.label}
+                                </span>
+                                {isActive && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full whitespace-nowrap">
+                                    Current
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ml-2 shrink-0 ${
+                                isActive
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-200 text-gray-600'
+                              }`}>
+                                {filter.count}
+                              </span>
+                            </div>
+                            
+                            {/* Connecting Line */}
+                            {index < arr.length - 1 && (
+                              <div className={`absolute left-5 top-10 w-0.5 h-5 ${lineColor} transition-colors duration-200`}></div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    
+                    {/* Cancelled Status - Separate */}
+                    {(() => {
+                      const cancelledFilter = statusFilters.find(f => f.value === ORDER_STATUS.CANCELLED)
+                      if (!cancelledFilter) return null
                       
                       return (
-                        <div key={filter.value} className="relative flex items-center">
-                          {/* Status Circle */}
+                        <div className="relative flex items-center pt-4 border-t border-gray-200">
                           <button
-                            onClick={() => setSelectedStatus(filter.value)}
+                            onClick={() => setSelectedStatus(ORDER_STATUS.CANCELLED)}
                             className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
-                              isActive
-                                ? 'bg-green-500 border-green-600 shadow-lg scale-110'
-                                : hasOrders
-                                ? 'bg-green-500 border-green-600'
-                                : 'bg-white border-gray-300 hover:border-gray-400'
+                              selectedStatus === ORDER_STATUS.CANCELLED
+                                ? 'bg-red-500 border-red-600 shadow-lg scale-110'
+                                : 'bg-white border-gray-300 hover:border-red-300'
                             }`}
                           >
-                            <Icon className={`w-4 h-4 ${
-                              isActive || hasOrders ? 'text-white' : 'text-gray-400'
+                            <XCircle className={`w-4 h-4 ${
+                              selectedStatus === ORDER_STATUS.CANCELLED ? 'text-white' : 'text-gray-400'
                             }`} />
                           </button>
-                          
-                          {/* Status Label */}
                           <div 
-                            className={`ml-4 flex-1 flex items-center justify-between p-3 rounded-lg transition-all duration-200 cursor-pointer ${
-                              isActive
-                                ? 'bg-green-50 border-2 border-green-200'
+                            className={`ml-3 flex-1 flex items-center justify-between p-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+                              selectedStatus === ORDER_STATUS.CANCELLED
+                                ? 'bg-red-50 border-2 border-red-200'
                                 : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
                             }`}
-                            onClick={() => setSelectedStatus(filter.value)}
+                            onClick={() => setSelectedStatus(ORDER_STATUS.CANCELLED)}
                           >
-                            <div className="flex items-center gap-2">
-                              <span className={`font-medium ${
-                                isActive ? 'text-green-700' : hasOrders ? 'text-gray-700' : 'text-gray-500'
-                              }`}>
-                                {filter.label}
-                              </span>
-                              {isActive && (
-                                <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
-                                  Current
-                                </span>
-                              )}
-                            </div>
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                              isActive
-                                ? 'bg-green-100 text-green-700'
+                            <span className={`font-medium text-xs ${
+                              selectedStatus === ORDER_STATUS.CANCELLED ? 'text-red-700' : 'text-gray-500'
+                            }`}>
+                              {cancelledFilter.label}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ml-2 shrink-0 ${
+                              selectedStatus === ORDER_STATUS.CANCELLED
+                                ? 'bg-red-100 text-red-700'
                                 : 'bg-gray-200 text-gray-600'
                             }`}>
-                              {filter.count}
+                              {cancelledFilter.count}
                             </span>
                           </div>
-                          
-                          {/* Connecting Line */}
-                          {index < arr.length - 1 && (
-                            <div className={`absolute left-5 top-10 w-0.5 h-6 ${lineColor} transition-colors duration-200`}></div>
-                          )}
                         </div>
                       )
-                    })}
-                  
-                  {/* Cancelled Status - Separate */}
-                  {(() => {
-                    const cancelledFilter = statusFilters.find(f => f.value === ORDER_STATUS.CANCELLED)
-                    const allFilter = statusFilters.find(f => f.value === 'all')
-                    if (!cancelledFilter) return null
+                    })()}
                     
-                    return (
-                      <div className="relative flex items-center pt-4 border-t border-gray-200">
-                        <button
-                          onClick={() => setSelectedStatus(ORDER_STATUS.CANCELLED)}
-                          className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
-                            selectedStatus === ORDER_STATUS.CANCELLED
-                              ? 'bg-red-500 border-red-600 shadow-lg scale-110'
-                              : 'bg-white border-gray-300 hover:border-red-300'
-                          }`}
-                        >
-                          <XCircle className={`w-4 h-4 ${
-                            selectedStatus === ORDER_STATUS.CANCELLED ? 'text-white' : 'text-gray-400'
-                          }`} />
-                        </button>
-                        <div 
-                          className={`ml-4 flex-1 flex items-center justify-between p-3 rounded-lg transition-all duration-200 cursor-pointer ${
-                            selectedStatus === ORDER_STATUS.CANCELLED
-                              ? 'bg-red-50 border-2 border-red-200'
-                              : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
-                          }`}
-                          onClick={() => setSelectedStatus(ORDER_STATUS.CANCELLED)}
-                        >
-                          <span className={`font-medium ${
-                            selectedStatus === ORDER_STATUS.CANCELLED ? 'text-red-700' : 'text-gray-500'
-                          }`}>
-                            {cancelledFilter.label}
-                          </span>
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                            selectedStatus === ORDER_STATUS.CANCELLED
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-gray-200 text-gray-600'
-                          }`}>
-                            {cancelledFilter.count}
-                          </span>
+                    {/* All Orders Button */}
+                    {(() => {
+                      const allFilter = statusFilters.find(f => f.value === 'all')
+                      if (!allFilter) return null
+                      
+                      return (
+                        <div className="relative flex items-center pt-4 border-t border-gray-200">
+                          <button
+                            onClick={() => setSelectedStatus('all')}
+                            className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
+                              selectedStatus === 'all'
+                                ? 'bg-blue-500 border-blue-600 shadow-lg scale-110'
+                                : 'bg-white border-gray-300 hover:border-blue-300'
+                            }`}
+                          >
+                            <Package className={`w-4 h-4 ${
+                              selectedStatus === 'all' ? 'text-white' : 'text-gray-400'
+                            }`} />
+                          </button>
+                          <div 
+                            className={`ml-3 flex-1 flex items-center justify-between p-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+                              selectedStatus === 'all'
+                                ? 'bg-blue-50 border-2 border-blue-200'
+                                : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => setSelectedStatus('all')}
+                          >
+                            <span className={`font-medium text-xs ${
+                              selectedStatus === 'all' ? 'text-blue-700' : 'text-gray-500'
+                            }`}>
+                              {allFilter.label}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ml-2 shrink-0 ${
+                              selectedStatus === 'all'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-200 text-gray-600'
+                            }`}>
+                              {allFilter.count}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })()}
-                  
-                  {/* All Orders Button */}
-                  {(() => {
-                    const allFilter = statusFilters.find(f => f.value === 'all')
-                    if (!allFilter) return null
-                    
-                    return (
-                      <div className="relative flex items-center pt-4 border-t border-gray-200">
-                        <button
-                          onClick={() => setSelectedStatus('all')}
-                          className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
-                            selectedStatus === 'all'
-                              ? 'bg-blue-500 border-blue-600 shadow-lg scale-110'
-                              : 'bg-white border-gray-300 hover:border-blue-300'
-                          }`}
-                        >
-                          <Package className={`w-4 h-4 ${
-                            selectedStatus === 'all' ? 'text-white' : 'text-gray-400'
-                          }`} />
-                        </button>
-                        <div 
-                          className={`ml-4 flex-1 flex items-center justify-between p-3 rounded-lg transition-all duration-200 cursor-pointer ${
-                            selectedStatus === 'all'
-                              ? 'bg-blue-50 border-2 border-blue-200'
-                              : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
-                          }`}
-                          onClick={() => setSelectedStatus('all')}
-                        >
-                          <span className={`font-medium ${
-                            selectedStatus === 'all' ? 'text-blue-700' : 'text-gray-500'
-                          }`}>
-                            {allFilter.label}
-                          </span>
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                            selectedStatus === 'all'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-gray-200 text-gray-600'
-                          }`}>
-                            {allFilter.count}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })()}
+                      )
+                    })()}
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Search */}
-            <div className="lg:w-64">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">Search Orders</h3>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search your orders..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-            </div>
           </div>
-        </div>
 
-        {/* Orders List */}
+          {/* Right Content: Orders List (70%) */}
+          <div className="lg:col-span-7">
+            {/* Orders List */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -1133,12 +1136,14 @@ const OrdersPage = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredOrders.map(order => (
               <OrderCard key={order.id} order={order} />
             ))}
           </div>
         )}
+          </div>
+        </div>
 
         {/* Order Details Modal */}
         {selectedOrder && (
