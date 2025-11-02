@@ -45,10 +45,10 @@ export const ORDER_STATUS_INFO = {
     description: 'Order placed, awaiting vendor confirmation'
   },
   [ORDER_STATUS.CONFIRMED]: {
-    label: 'Vendor Accepted',
+    label: 'Order Accepted',
     color: 'blue',
     icon: 'CheckCircle',
-    description: 'Vendor accepted the order - Payment required'
+    description: 'Order accepted - Payment required'
   },
   [ORDER_STATUS.PROCESSING]: {
     label: 'Payment Completed',
@@ -63,22 +63,22 @@ export const ORDER_STATUS_INFO = {
     description: 'Your order is confirmed and being prepared for dispatch'
   },
   [ORDER_STATUS.TRUCK_LOADING]: {
-    label: 'Loading for Dispatch',
+    label: 'Loading',
     color: 'orange',
     icon: 'Truck',
-    description: 'Your order is being loaded for dispatch'
+    description: 'Your order is being loaded onto delivery vehicle'
   },
   [ORDER_STATUS.SHIPPED]: {
-    label: 'Shipped',
+    label: 'Dispatched',
     color: 'indigo',
     icon: 'Package',
-    description: 'Order has been shipped from warehouse'
+    description: 'Order dispatched from warehouse'
   },
   [ORDER_STATUS.IN_TRANSIT]: {
-    label: 'In Transit',
+    label: 'On the Way',
     color: 'blue',
     icon: 'Truck',
-    description: 'Order is on the way to your location'
+    description: 'Order is in transit to your location'
   },
   [ORDER_STATUS.OUT_FOR_DELIVERY]: {
     label: 'Out for Delivery',

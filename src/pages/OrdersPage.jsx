@@ -108,11 +108,11 @@ const OrdersPage = () => {
     { value: 'all', label: 'All Orders', count: stats.total, icon: Package, color: 'blue' },
     { value: ORDER_STATUS.PENDING, label: 'In Cart', count: stats.pending, icon: Clock, color: 'yellow' },
     { value: ORDER_STATUS.ORDER_PLACED, label: 'Order Placed', count: stats.orderPlaced, icon: Package, color: 'orange' },
-    { value: ORDER_STATUS.CONFIRMED, label: 'Vendor Accepted', count: stats.confirmed, icon: CheckCircle, color: 'blue' },
+    { value: ORDER_STATUS.CONFIRMED, label: 'Order Accepted', count: stats.confirmed, icon: CheckCircle, color: 'blue' },
     { value: ORDER_STATUS.PROCESSING, label: 'Payment Done', count: stats.processing, icon: RefreshCw, color: 'purple' },
     { value: ORDER_STATUS.ORDER_CONFIRMED, label: 'Order Confirmed', count: stats.orderConfirmed, icon: CheckCircle, color: 'green' },
     { value: ORDER_STATUS.TRUCK_LOADING, label: 'Loading', count: stats.truckLoading, icon: Truck, color: 'orange' },
-    { value: ORDER_STATUS.SHIPPED, label: 'Shipped', count: stats.shipped, icon: Truck, color: 'indigo' },
+    { value: ORDER_STATUS.SHIPPED, label: 'Dispatched', count: stats.shipped, icon: Package, color: 'indigo' },
     { value: ORDER_STATUS.IN_TRANSIT, label: 'On the Way', count: stats.inTransit, icon: Truck, color: 'blue' },
     { value: ORDER_STATUS.OUT_FOR_DELIVERY, label: 'Out for Delivery', count: stats.outForDelivery, icon: Truck, color: 'green' },
     { value: ORDER_STATUS.DELIVERED, label: 'Delivered', count: stats.delivered, icon: CheckCircle, color: 'green' },
@@ -911,46 +911,190 @@ const OrdersPage = () => {
           })}
         </div>
 
-        {/* Filters and Search */}
+        {/* Order Flow Timeline & Search */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            {/* Status Filters */}
-            <div className="flex flex-wrap gap-2">
-              {statusFilters.map(filter => {
-                const Icon = filter.icon
-                const isActive = selectedStatus === filter.value
-                return (
-                  <button
-                    key={filter.value}
-                    onClick={() => setSelectedStatus(filter.value)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{filter.label}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
-                    }`}>
-                      {filter.count}
-                    </span>
-                  </button>
-                )
-              })}
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Order Flow Timeline */}
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Order Flow</h3>
+              <div className="relative">
+                {/* Vertical Line */}
+                <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                
+                {/* Status Points */}
+                <div className="space-y-6">
+                  {statusFilters
+                    .filter(f => f.value !== 'all' && f.value !== ORDER_STATUS.CANCELLED)
+                    .map((filter, index, arr) => {
+                      const Icon = filter.icon
+                      const isActive = selectedStatus === filter.value
+                      // Check if this status should show as completed (any order at this status)
+                      const hasOrders = filter.count > 0
+                      
+                      // Determine line color - green if active or has orders
+                      const lineColor = isActive || hasOrders ? 'bg-green-500' : 'bg-gray-200'
+                      
+                      return (
+                        <div key={filter.value} className="relative flex items-center">
+                          {/* Status Circle */}
+                          <button
+                            onClick={() => setSelectedStatus(filter.value)}
+                            className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
+                              isActive
+                                ? 'bg-green-500 border-green-600 shadow-lg scale-110'
+                                : hasOrders
+                                ? 'bg-green-500 border-green-600'
+                                : 'bg-white border-gray-300 hover:border-gray-400'
+                            }`}
+                          >
+                            <Icon className={`w-4 h-4 ${
+                              isActive || hasOrders ? 'text-white' : 'text-gray-400'
+                            }`} />
+                          </button>
+                          
+                          {/* Status Label */}
+                          <div 
+                            className={`ml-4 flex-1 flex items-center justify-between p-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                              isActive
+                                ? 'bg-green-50 border-2 border-green-200'
+                                : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => setSelectedStatus(filter.value)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`font-medium ${
+                                isActive ? 'text-green-700' : hasOrders ? 'text-gray-700' : 'text-gray-500'
+                              }`}>
+                                {filter.label}
+                              </span>
+                              {isActive && (
+                                <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                                  Current
+                                </span>
+                              )}
+                            </div>
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                              isActive
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-200 text-gray-600'
+                            }`}>
+                              {filter.count}
+                            </span>
+                          </div>
+                          
+                          {/* Connecting Line */}
+                          {index < arr.length - 1 && (
+                            <div className={`absolute left-5 top-10 w-0.5 h-6 ${lineColor} transition-colors duration-200`}></div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  
+                  {/* Cancelled Status - Separate */}
+                  {(() => {
+                    const cancelledFilter = statusFilters.find(f => f.value === ORDER_STATUS.CANCELLED)
+                    const allFilter = statusFilters.find(f => f.value === 'all')
+                    if (!cancelledFilter) return null
+                    
+                    return (
+                      <div className="relative flex items-center pt-4 border-t border-gray-200">
+                        <button
+                          onClick={() => setSelectedStatus(ORDER_STATUS.CANCELLED)}
+                          className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
+                            selectedStatus === ORDER_STATUS.CANCELLED
+                              ? 'bg-red-500 border-red-600 shadow-lg scale-110'
+                              : 'bg-white border-gray-300 hover:border-red-300'
+                          }`}
+                        >
+                          <XCircle className={`w-4 h-4 ${
+                            selectedStatus === ORDER_STATUS.CANCELLED ? 'text-white' : 'text-gray-400'
+                          }`} />
+                        </button>
+                        <div 
+                          className={`ml-4 flex-1 flex items-center justify-between p-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                            selectedStatus === ORDER_STATUS.CANCELLED
+                              ? 'bg-red-50 border-2 border-red-200'
+                              : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                          }`}
+                          onClick={() => setSelectedStatus(ORDER_STATUS.CANCELLED)}
+                        >
+                          <span className={`font-medium ${
+                            selectedStatus === ORDER_STATUS.CANCELLED ? 'text-red-700' : 'text-gray-500'
+                          }`}>
+                            {cancelledFilter.label}
+                          </span>
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                            selectedStatus === ORDER_STATUS.CANCELLED
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            {cancelledFilter.count}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                  
+                  {/* All Orders Button */}
+                  {(() => {
+                    const allFilter = statusFilters.find(f => f.value === 'all')
+                    if (!allFilter) return null
+                    
+                    return (
+                      <div className="relative flex items-center pt-4 border-t border-gray-200">
+                        <button
+                          onClick={() => setSelectedStatus('all')}
+                          className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
+                            selectedStatus === 'all'
+                              ? 'bg-blue-500 border-blue-600 shadow-lg scale-110'
+                              : 'bg-white border-gray-300 hover:border-blue-300'
+                          }`}
+                        >
+                          <Package className={`w-4 h-4 ${
+                            selectedStatus === 'all' ? 'text-white' : 'text-gray-400'
+                          }`} />
+                        </button>
+                        <div 
+                          className={`ml-4 flex-1 flex items-center justify-between p-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                            selectedStatus === 'all'
+                              ? 'bg-blue-50 border-2 border-blue-200'
+                              : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                          }`}
+                          onClick={() => setSelectedStatus('all')}
+                        >
+                          <span className={`font-medium ${
+                            selectedStatus === 'all' ? 'text-blue-700' : 'text-gray-500'
+                          }`}>
+                            {allFilter.label}
+                          </span>
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                            selectedStatus === 'all'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            {allFilter.count}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </div>
+              </div>
             </div>
 
             {/* Search */}
-            <div className="relative w-full lg:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search your orders..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 rounded-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              />
+            <div className="lg:w-64">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Search Orders</h3>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search your orders..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
             </div>
           </div>
         </div>
