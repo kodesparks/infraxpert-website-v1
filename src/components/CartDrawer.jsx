@@ -425,13 +425,38 @@ const CartDrawer = ({ isOpen, onClose }) => {
                       <button
                         onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.leadId)}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+                        title="Decrease quantity"
                       >
                         <Minus className="w-4 h-4 text-gray-600" />
                       </button>
-                      <span className="w-8 text-center font-medium">{item.quantity}</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const newValue = parseInt(e.target.value) || 1
+                          if (newValue >= 1) {
+                            handleQuantityChange(item.id, newValue, item.leadId)
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = parseInt(e.target.value)
+                          if (!value || value < 1) {
+                            handleQuantityChange(item.id, 1, item.leadId)
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.target.blur()
+                          }
+                        }}
+                        className="w-16 px-2 py-1 text-center font-medium border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        style={{ appearance: 'textfield' }}
+                      />
                       <button
                         onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.leadId)}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+                        title="Increase quantity"
                       >
                         <Plus className="w-4 h-4 text-gray-600" />
                       </button>
