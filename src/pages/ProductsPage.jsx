@@ -250,6 +250,10 @@ const ProductsPage = () => {
       }
     });
     
+    // Calculate discount if basePrice > unitPrice
+    const hasDiscount = basePrice > unitPrice && basePrice > 0
+    const discountPercentage = hasDiscount ? Math.round(((basePrice - unitPrice) / basePrice) * 100) : 0
+
     return {
       id: item._id,
       name: item.itemDescription,
@@ -257,9 +261,10 @@ const ProductsPage = () => {
       brand: item.vendor?.name || item.vendorId?.name || 'Unknown',
       image: item.primaryImage || '/placeholder-image.jpg',
       images: item.images || [],
-      discount: 0,
-      originalPrice: unitPrice,
-      currentPrice: unitPrice,
+      discount: discountPercentage,
+      basePrice: basePrice, // Original base price from backend
+      originalPrice: basePrice > unitPrice ? basePrice : unitPrice, // For strikethrough display
+      currentPrice: unitPrice, // Current/discounted price
       totalPrice: totalPrice,
       unit: `/${item.units?.toLowerCase() || 'unit'}`,
       rating: 4.5,
@@ -668,7 +673,7 @@ const ProductsPage = () => {
                     )}
                     
                     {/* Discount Badge */}
-                    {product.discount > 0 && (
+                    {product.basePrice > product.currentPrice && product.basePrice > 0 && product.discount > 0 && (
                     <div className="absolute top-2 sm:top-3 lg:top-4 left-2 sm:left-3 lg:left-4">
                       <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                         {product.discount}% OFF
@@ -755,12 +760,25 @@ const ProductsPage = () => {
                     <div className="mb-3">
                       {userPincode ? (
                         <div className="space-y-2">
-                          {/* Base Price */}
+                          {/* Base Price with Discount Display */}
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-500">Base Price:</span>
-                            <span className="text-xs text-gray-600">
-                          ₹{product.currentPrice.toLocaleString()}{product.unit}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {product.basePrice > product.currentPrice && product.basePrice > 0 ? (
+                                <>
+                                  <span className="text-xs text-gray-400 line-through">
+                                    ₹{product.basePrice.toLocaleString()}
+                                  </span>
+                                  <span className="text-xs font-semibold text-green-600">
+                                    ₹{product.currentPrice.toLocaleString()}{product.unit}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-xs text-gray-600">
+                                  ₹{product.currentPrice.toLocaleString()}{product.unit}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           
                           {/* Delivery Charge */}
@@ -802,12 +820,25 @@ const ProductsPage = () => {
                         </div>
                       ) : (
                         <div>
-                          <div className="text-sm font-bold text-gray-800">
-                            ₹{product.currentPrice.toLocaleString()}{product.unit}
+                          <div className="flex items-center gap-2">
+                            {product.basePrice > product.currentPrice && product.basePrice > 0 ? (
+                              <>
+                                <span className="text-xs text-gray-400 line-through">
+                                  ₹{product.basePrice.toLocaleString()}
+                                </span>
+                                <span className="text-sm font-bold text-green-600">
+                                  ₹{product.currentPrice.toLocaleString()}{product.unit}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-sm font-bold text-gray-800">
+                                ₹{product.currentPrice.toLocaleString()}{product.unit}
+                              </span>
+                            )}
                           </div>
-                          {product.originalPrice > product.currentPrice && (
-                            <div className="text-xs text-gray-500 line-through">
-                          ₹{product.originalPrice.toLocaleString()}{product.unit}
+                          {product.discount > 0 && (
+                            <div className="text-xs text-green-600 font-medium mt-1">
+                              {product.discount}% OFF
                             </div>
                           )}
                           <div className="text-xs text-gray-500 mt-1">
