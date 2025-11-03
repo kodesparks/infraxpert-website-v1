@@ -186,12 +186,15 @@ const ProductsPage = () => {
     const basePrice = item.pricing?.basePrice || 0; // Keep for reference
     const totalPrice = item.totalPrice || unitPrice;
     
-    // Get delivery information from root level deliveryConfig
-    const distance = item.distance || 0;
-    const warehouseName = item.warehouseName || 'Unknown Warehouse';
+    // Get delivery information - support both new structure (warehouse object) and old (root level)
+    // New backend structure: item.warehouse (single object)
+    // Old structure (backward compatibility): item.warehouseName, item.distance, item.deliveryConfig at root
+    const warehouseData = item.warehouse || {};
+    const distance = item.distance || warehouseData.distance || 0;
+    const warehouseName = item.warehouseName || warehouseData.warehouseName || 'Unknown Warehouse';
     
-    // Get delivery configuration from root level
-    const deliveryConfig = item.deliveryConfig || {};
+    // Get delivery configuration - from warehouse object or root level (backward compatibility)
+    const deliveryConfig = item.deliveryConfig || warehouseData.deliveryConfig || {};
     const baseDeliveryCharge = deliveryConfig.baseDeliveryCharge || 0;
     const perKmCharge = deliveryConfig.perKmCharge || 0;
     const minimumOrder = deliveryConfig.minimumOrder || 0;
@@ -213,8 +216,8 @@ const ProductsPage = () => {
     // Remove frontend-derived delivery time as per user's request
     const deliveryTime = 'Not available';
     
-    // Get stock information from root level
-    const stock = item.stock || {};
+    // Get stock information - from warehouse object or root level (backward compatibility)
+    const stock = item.stock || warehouseData.stock || {};
     const availableStock = stock.available || 0;
     const reservedStock = stock.reserved || 0;
     
@@ -305,7 +308,7 @@ const ProductsPage = () => {
         stock: stock
       },
       shipping: item.shipping || {},
-      warehouse: item.warehouse || {},
+      warehouse: item.warehouse || warehouseData || {}, // Use new warehouse object if available
       itemCode: item.itemCode,
       formattedItemCode: item.formattedItemCode,
       subCategory: item.subCategory,
