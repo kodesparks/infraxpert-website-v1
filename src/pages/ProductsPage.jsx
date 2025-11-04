@@ -186,14 +186,15 @@ const ProductsPage = () => {
     const basePrice = item.pricing?.basePrice || 0; // Keep for reference
     const totalPrice = item.totalPrice || unitPrice;
     
-    // Get delivery information - support both new structure (warehouse object) and old (root level)
-    // New backend structure: item.warehouse (single object)
-    // Old structure (backward compatibility): item.warehouseName, item.distance, item.deliveryConfig at root
+    // Get delivery information - backend returns nearest warehouse (calculated from customer pincode)
+    // Backend calculates distance from customer pincode to ALL warehouses that stock the item,
+    // then selects the nearest warehouse and returns it with pricing
+    // Support both structure types: item.warehouse (single object) or root level fields (backward compatibility)
     const warehouseData = item.warehouse || {};
     const distance = item.distance || warehouseData.distance || 0;
     const warehouseName = item.warehouseName || warehouseData.warehouseName || 'Unknown Warehouse';
     
-    // Get delivery configuration - from warehouse object or root level (backward compatibility)
+    // Get delivery configuration - from nearest warehouse object or root level (backward compatibility)
     const deliveryConfig = item.deliveryConfig || warehouseData.deliveryConfig || {};
     const baseDeliveryCharge = deliveryConfig.baseDeliveryCharge || 0;
     const perKmCharge = deliveryConfig.perKmCharge || 0;
@@ -221,8 +222,8 @@ const ProductsPage = () => {
     const availableStock = stock.available || 0;
     const reservedStock = stock.reserved || 0;
     
-    // Debug log for new structure
-    console.log(`💰 Product: ${item.itemDescription}`, {
+    // Debug log - shows nearest warehouse data from backend
+    console.log(`💰 Product: ${item.itemDescription} (Nearest Warehouse: ${warehouseName})`, {
       unitPrice: unitPrice,
       basePrice: basePrice,
       totalPrice: totalPrice,
@@ -242,7 +243,8 @@ const ProductsPage = () => {
         formula: `Backend Total (₹${backendTotalPrice}) - Unit Price (₹${unitPrice}) = Delivery Charge (₹${calculatedDeliveryCharge})`,
         isFreeDelivery: isFreeDelivery,
         isDeliveryAvailable: isDeliveryAvailable,
-        usingBackendCalculation: true
+        usingBackendCalculation: true,
+        note: 'Warehouse selected: Nearest to customer pincode'
       },
       // Show the actual backend response structure
       backendItem: {
