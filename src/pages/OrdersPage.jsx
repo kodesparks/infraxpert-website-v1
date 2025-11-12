@@ -58,6 +58,8 @@ const OrdersPage = () => {
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [orderDetails, setOrderDetails] = useState(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [mobileTrackingOrder, setMobileTrackingOrder] = useState(null)
+  const [showMobileOrderFlow, setShowMobileOrderFlow] = useState(false)
   
   // Change functionality state
   const [showAddressModal, setShowAddressModal] = useState(false)
@@ -106,7 +108,6 @@ const OrdersPage = () => {
   // Customer-focused status filters - properly mapped to API statuses
   const statusFilters = [
     { value: 'all', label: 'All Orders', count: stats.total, icon: Package, color: 'blue' },
-    { value: ORDER_STATUS.PENDING, label: 'In Cart', count: stats.pending, icon: Clock, color: 'yellow' },
     { value: ORDER_STATUS.ORDER_PLACED, label: 'Order Placed', count: stats.orderPlaced, icon: Package, color: 'orange' },
     { value: ORDER_STATUS.CONFIRMED, label: 'Order Accepted', count: stats.confirmed, icon: CheckCircle, color: 'blue' },
     { value: ORDER_STATUS.PROCESSING, label: 'Payment Done', count: stats.processing, icon: RefreshCw, color: 'purple' },
@@ -234,10 +235,365 @@ const OrdersPage = () => {
     console.log('Success:', message)
   }
 
+  const OrderTimeline = ({ order, baseOrder, variant = 'desktop' }) => {
+    const timelineOrder = order || baseOrder
+    if (!timelineOrder && !baseOrder) return null
+
+    const currentStatus = timelineOrder?.status || baseOrder?.status
+    const normalizedStatus = currentStatus || ORDER_STATUS.PENDING
+    const orderDate = timelineOrder?.orderDate || baseOrder?.orderDate
+
+    const isPendingStage = normalizedStatus === ORDER_STATUS.PENDING || normalizedStatus === ORDER_STATUS.ORDER_PLACED
+    const showOrderAccepted = normalizedStatus && ![ORDER_STATUS.PENDING, ORDER_STATUS.ORDER_PLACED].includes(normalizedStatus)
+    const showPaymentRequired = normalizedStatus === ORDER_STATUS.CONFIRMED
+    const showPaymentDone = [
+      ORDER_STATUS.PROCESSING,
+      ORDER_STATUS.SHIPPED,
+      ORDER_STATUS.IN_TRANSIT,
+      ORDER_STATUS.OUT_FOR_DELIVERY,
+      ORDER_STATUS.DELIVERED
+    ].includes(normalizedStatus)
+    const showOrderConfirmed = showPaymentDone
+    const showShipped = [
+      ORDER_STATUS.SHIPPED,
+      ORDER_STATUS.IN_TRANSIT,
+      ORDER_STATUS.OUT_FOR_DELIVERY,
+      ORDER_STATUS.DELIVERED
+    ].includes(normalizedStatus)
+    const showInTransit = [
+      ORDER_STATUS.IN_TRANSIT,
+      ORDER_STATUS.OUT_FOR_DELIVERY,
+      ORDER_STATUS.DELIVERED
+    ].includes(normalizedStatus)
+    const showOutForDelivery = [ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED].includes(normalizedStatus)
+    const showDelivered = normalizedStatus === ORDER_STATUS.DELIVERED
+
+    const stepCircleClass = (active) => `w-4 h-4 rounded-full ${active ? 'bg-green-500' : 'bg-gray-300'}`
+    const badgeColorClasses = {
+      current: 'bg-blue-100 text-blue-700',
+      progress: 'bg-yellow-100 text-yellow-700',
+      completed: 'bg-green-100 text-green-700',
+      pending: 'bg-orange-100 text-orange-700'
+    }
+    const circleColorClasses = {
+      current: 'bg-blue-500',
+      progress: 'bg-yellow-500',
+      completed: 'bg-green-500',
+      pending: 'bg-orange-500',
+      upcoming: 'bg-gray-300'
+    }
+
+    const timelineSteps = [
+      {
+        key: 'orderPlaced',
+        label: 'Order Placed',
+        icon: Package,
+        description: 'Your order has been received and is being processed',
+        badgeLabel: isPendingStage ? 'Current' : 'Completed',
+        badgeStatus: isPendingStage ? 'current' : 'completed',
+        timestamp: orderDate ? formatDate(orderDate) : null
+      },
+      {
+        key: 'vendorVerifying',
+        label: 'Vendor Verifying',
+        icon: SearchIcon,
+        description: isPendingStage ? 'Vendor is reviewing your order' : 'Vendor has accepted your order',
+        badgeLabel: isPendingStage ? 'In Progress' : 'Completed',
+        badgeStatus: isPendingStage ? 'progress' : 'completed'
+      }
+    ]
+
+    if (showOrderAccepted) {
+      timelineSteps.push({
+        key: 'orderAccepted',
+        label: 'Order Accepted',
+        icon: CheckCircle2,
+        description: 'Vendor has accepted your order',
+        badgeLabel: 'Completed',
+        badgeStatus: 'completed'
+      })
+    }
+
+    if (showPaymentRequired) {
+      timelineSteps.push({
+        key: 'paymentRequired',
+        label: 'Payment Required',
+        icon: CreditCard,
+        description: 'Please complete payment to proceed with your order',
+        badgeLabel: 'Pending',
+        badgeStatus: 'pending'
+      })
+    }
+
+    if (showPaymentDone) {
+      timelineSteps.push({
+        key: 'paymentDone',
+        label: 'Payment Done',
+        icon: CheckCircle,
+        description: 'Payment has been processed successfully',
+        badgeLabel: 'Completed',
+        badgeStatus: 'completed'
+      })
+    }
+
+    if (showOrderConfirmed) {
+      timelineSteps.push({
+        key: 'orderConfirmed',
+        label: 'Order Confirmed',
+        icon: CircleCheck,
+        description: 'Your order is confirmed and being prepared',
+        badgeLabel: 'Completed',
+        badgeStatus: 'completed'
+      })
+    }
+
+    if (showShipped) {
+      timelineSteps.push({
+        key: 'shipped',
+        label: 'Shipped',
+        icon: Package2,
+        description: 'Your order has been shipped from the warehouse',
+        badgeLabel: 'Completed',
+        badgeStatus: 'completed'
+      })
+    }
+
+    if (showInTransit) {
+      timelineSteps.push({
+        key: 'inTransit',
+        label: 'In Transit',
+        icon: TruckIcon,
+        description: 'Your order is on the way to your location',
+        badgeLabel: 'Completed',
+        badgeStatus: 'completed'
+      })
+    }
+
+    if (showOutForDelivery) {
+      timelineSteps.push({
+        key: 'outForDelivery',
+        label: 'Out for Delivery',
+        icon: Truck,
+        description: 'Your order is out for delivery today',
+        badgeLabel: 'Completed',
+        badgeStatus: 'completed'
+      })
+    }
+
+    if (showDelivered) {
+      timelineSteps.push({
+        key: 'delivered',
+        label: 'Delivered',
+        icon: CheckCircle,
+        description: 'Your order has been delivered successfully',
+        badgeLabel: 'Completed',
+        badgeStatus: 'completed'
+      })
+    }
+
+    if (variant === 'mobile') {
+      return (
+        <div className="space-y-4">
+          {timelineSteps.map((step, index) => {
+            const Icon = step.icon
+            const badgeClass = badgeColorClasses[step.badgeStatus] || badgeColorClasses.completed
+            const circleClass = circleColorClasses[step.badgeStatus] || circleColorClasses.completed
+
+            return (
+              <div key={step.key} className="relative pl-10">
+                {index < timelineSteps.length - 1 && (
+                  <div className="absolute left-4 top-4 w-0.5 h-[calc(100%-16px)] bg-gray-200" />
+                )}
+                <div className={`absolute left-2 top-3 w-4 h-4 rounded-full ${circleClass}`} />
+                <div className="bg-gray-50 rounded-xl p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-4 h-4 text-gray-600" />
+                      <span className="text-sm font-semibold text-gray-900">{step.label}</span>
+                    </div>
+                    {step.badgeLabel && (
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${badgeClass}`}>
+                        {step.badgeLabel}
+                      </span>
+                    )}
+                  </div>
+                  {step.timestamp && (
+                    <p className="text-xs text-gray-500 mt-2">{step.timestamp}</p>
+                  )}
+                  <p className="text-xs text-gray-600 mt-2 leading-relaxed">{step.description}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+
+    return (
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Timeline</h3>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className={stepCircleClass(true)} />
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <Package className="w-4 h-4 text-gray-600" />
+                <span className="font-medium text-gray-900">Order Placed</span>
+                {orderDate && <span className="text-sm text-gray-500">{formatDate(orderDate)}</span>}
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    isPendingStage ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                  }`}
+                >
+                  {isPendingStage ? 'Current' : 'Completed'}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">Your order has been received and is being processed</p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <div className={stepCircleClass(!isPendingStage)} />
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <SearchIcon className="w-4 h-4 text-gray-600" />
+                <span className="font-medium text-gray-900">Vendor Verifying</span>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    isPendingStage ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                  }`}
+                >
+                  {isPendingStage ? 'In Progress' : 'Completed'}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">
+                {isPendingStage ? 'Vendor is reviewing your order' : 'Vendor has accepted your order'}
+              </p>
+            </div>
+          </div>
+
+          {showOrderAccepted && (
+            <div className="flex items-center space-x-3">
+              <div className={stepCircleClass(showOrderAccepted)} />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-900">Order Accepted</span>
+                  <span className="text-sm text-gray-500">Completed</span>
+                </div>
+                <p className="text-sm text-gray-600">Vendor has accepted your order</p>
+              </div>
+            </div>
+          )}
+
+          {showPaymentRequired && (
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded-full bg-yellow-500" />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <CreditCard className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-900">Payment Required</span>
+                  <span className="text-sm text-gray-500">Pending</span>
+                </div>
+                <p className="text-sm text-gray-600">Please complete payment to proceed with your order</p>
+              </div>
+            </div>
+          )}
+
+          {showPaymentDone && (
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded-full bg-green-500" />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-900">Payment Done</span>
+                  <span className="text-sm text-gray-500">Completed</span>
+                </div>
+                <p className="text-sm text-gray-600">Payment has been processed successfully</p>
+              </div>
+            </div>
+          )}
+
+          {showOrderConfirmed && (
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded-full bg-green-500" />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <CircleCheck className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-900">Order Confirmed</span>
+                  <span className="text-sm text-gray-500">Completed</span>
+                </div>
+                <p className="text-sm text-gray-600">Your order is confirmed and being prepared</p>
+              </div>
+            </div>
+          )}
+
+          {showShipped && (
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded-full bg-green-500" />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <Package2 className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-900">Shipped</span>
+                  <span className="text-sm text-gray-500">Completed</span>
+                </div>
+                <p className="text-sm text-gray-600">Your order has been shipped from the warehouse</p>
+              </div>
+            </div>
+          )}
+
+          {showInTransit && (
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded-full bg-green-500" />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <TruckIcon className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-900">In Transit</span>
+                  <span className="text-sm text-gray-500">Completed</span>
+                </div>
+                <p className="text-sm text-gray-600">Your order is on the way to your location</p>
+              </div>
+            </div>
+          )}
+
+          {showOutForDelivery && (
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded-full bg-green-500" />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <Truck className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-900">Out for Delivery</span>
+                  <span className="text-sm text-gray-500">Completed</span>
+                </div>
+                <p className="text-sm text-gray-600">Your order is out for delivery today</p>
+              </div>
+            </div>
+          )}
+
+          {showDelivered && (
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded-full bg-green-500" />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-900">Delivered</span>
+                  <span className="text-sm text-gray-500">Completed</span>
+                </div>
+                <p className="text-sm text-gray-600">Your order has been delivered successfully</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   // Customer-friendly order card component
   const OrderCard = ({ order }) => {
     const statusInfo = ORDER_STATUS_INFO[order.status]
-    const isVendorAccepted = order.status === ORDER_STATUS.CONFIRMED
+    const paymentStatus = order.paymentStatus || order.payment_status || ''
+    const isPaymentPending = typeof paymentStatus === 'string' && paymentStatus.toLowerCase() === 'pending'
+    const showPayNow = order.status === ORDER_STATUS.CONFIRMED || isPaymentPending
     
     return (
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-all duration-200">
@@ -254,20 +610,27 @@ const OrdersPage = () => {
           </div>
           
           <div className="text-right shrink-0">
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${getStatusClasses(order.status)}`}>
+            <button
+              type="button"
+              onClick={() => setMobileTrackingOrder(order)}
+              className={`inline-flex sm:hidden items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${getStatusClasses(order.status)}`}
+            >
+              {statusInfo?.label}
+            </button>
+            <span className={`hidden sm:inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${getStatusClasses(order.status)}`}>
               {statusInfo?.label}
             </span>
           </div>
         </div>
 
         {/* Payment Required Alert */}
-        {isVendorAccepted && (
+        {showPayNow && (
           <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 text-blue-600" />
               <div className="flex-1">
-                <p className="text-xs font-medium text-blue-800">Payment Required</p>
-                <p className="text-xs text-blue-600">Complete payment to proceed</p>
+                <p className="text-xs font-medium text-blue-800">Payment Pending</p>
+                <p className="text-xs text-blue-600">Complete payment to confirm your order</p>
               </div>
               <Button
                 onClick={() => handlePayment(order)}
@@ -275,7 +638,7 @@ const OrdersPage = () => {
                 className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1"
               >
                 <PaymentIcon className="w-3 h-3 mr-1" />
-                Pay
+                Pay Now
               </Button>
             </div>
           </div>
@@ -399,218 +762,7 @@ const OrdersPage = () => {
           {/* Content */}
           <div className="p-6 space-y-6">
             {/* Status Timeline */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Timeline</h3>
-              <div className="space-y-4">
-                {/* Order Placed */}
-                <div className="flex items-center space-x-3">
-                  <div className={`w-4 h-4 rounded-full ${
-                    order.status === ORDER_STATUS.PENDING || 
-                    order.status === ORDER_STATUS.ORDER_PLACED ||
-                    order.status === ORDER_STATUS.CONFIRMED || 
-                    order.status === ORDER_STATUS.PROCESSING || 
-                    order.status === ORDER_STATUS.SHIPPED || 
-                    order.status === ORDER_STATUS.IN_TRANSIT || 
-                    order.status === ORDER_STATUS.OUT_FOR_DELIVERY || 
-                    order.status === ORDER_STATUS.DELIVERED
-                      ? 'bg-green-500' : 'bg-gray-300'
-                  }`} />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <Package className="w-4 h-4 text-gray-600" />
-                      <span className="font-medium text-gray-900">Order Placed</span>
-                      <span className="text-sm text-gray-500">{formatDate(order.orderDate)}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        order.status === ORDER_STATUS.PENDING || order.status === ORDER_STATUS.ORDER_PLACED
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {order.status === ORDER_STATUS.PENDING || order.status === ORDER_STATUS.ORDER_PLACED
-                          ? 'Current' 
-                          : 'Completed'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">Your order has been received and is being processed</p>
-                  </div>
-                </div>
-
-                {/* Vendor Verifying */}
-                <div className="flex items-center space-x-3">
-                  <div className={`w-4 h-4 rounded-full ${
-                    order.status === ORDER_STATUS.CONFIRMED || 
-                    order.status === ORDER_STATUS.PROCESSING || 
-                    order.status === ORDER_STATUS.SHIPPED || 
-                    order.status === ORDER_STATUS.IN_TRANSIT || 
-                    order.status === ORDER_STATUS.OUT_FOR_DELIVERY || 
-                    order.status === ORDER_STATUS.DELIVERED
-                      ? 'bg-green-500' : 'bg-gray-300'
-                  }`} />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <SearchIcon className="w-4 h-4 text-gray-600" />
-                      <span className="font-medium text-gray-900">Vendor Verifying</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        order.status === ORDER_STATUS.PENDING || order.status === ORDER_STATUS.ORDER_PLACED
-                          ? 'bg-yellow-100 text-yellow-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {order.status === ORDER_STATUS.PENDING || order.status === ORDER_STATUS.ORDER_PLACED
-                          ? 'In Progress' 
-                          : 'Completed'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {order.status === ORDER_STATUS.PENDING || order.status === ORDER_STATUS.ORDER_PLACED
-                        ? 'Vendor is reviewing your order' 
-                        : 'Vendor has accepted your order'
-                      }
-                    </p>
-                  </div>
-                </div>
-
-                {/* Order Accepted */}
-                {order.status !== ORDER_STATUS.PENDING && order.status !== ORDER_STATUS.ORDER_PLACED && (
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full ${
-                      order.status === ORDER_STATUS.CONFIRMED || 
-                      order.status === ORDER_STATUS.PROCESSING || 
-                      order.status === ORDER_STATUS.SHIPPED || 
-                      order.status === ORDER_STATUS.IN_TRANSIT || 
-                      order.status === ORDER_STATUS.OUT_FOR_DELIVERY || 
-                      order.status === ORDER_STATUS.DELIVERED
-                        ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle2 className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Order Accepted</span>
-                        <span className="text-sm text-gray-500">Completed</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Vendor has accepted your order</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Payment Required */}
-                {order.status === ORDER_STATUS.CONFIRMED && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-yellow-500" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <CreditCard className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Payment Required</span>
-                        <span className="text-sm text-gray-500">Pending</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Please complete payment to proceed with your order</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Payment Done */}
-                {(order.status === ORDER_STATUS.PROCESSING || 
-                  order.status === ORDER_STATUS.SHIPPED || 
-                  order.status === ORDER_STATUS.IN_TRANSIT || 
-                  order.status === ORDER_STATUS.OUT_FOR_DELIVERY || 
-                  order.status === ORDER_STATUS.DELIVERED) && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-green-500" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Payment Done</span>
-                        <span className="text-sm text-gray-500">Completed</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Payment has been processed successfully</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Order Confirmed */}
-                {(order.status === ORDER_STATUS.PROCESSING || 
-                  order.status === ORDER_STATUS.SHIPPED || 
-                  order.status === ORDER_STATUS.IN_TRANSIT || 
-                  order.status === ORDER_STATUS.OUT_FOR_DELIVERY || 
-                  order.status === ORDER_STATUS.DELIVERED) && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-green-500" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <CircleCheck className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Order Confirmed</span>
-                        <span className="text-sm text-gray-500">Completed</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Your order is confirmed and being prepared</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Shipped */}
-                {(order.status === ORDER_STATUS.SHIPPED || 
-                  order.status === ORDER_STATUS.IN_TRANSIT || 
-                  order.status === ORDER_STATUS.OUT_FOR_DELIVERY || 
-                  order.status === ORDER_STATUS.DELIVERED) && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-green-500" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <Package2 className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Shipped</span>
-                        <span className="text-sm text-gray-500">Completed</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Your order has been shipped from the warehouse</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* In Transit */}
-                {(order.status === ORDER_STATUS.IN_TRANSIT || 
-                  order.status === ORDER_STATUS.OUT_FOR_DELIVERY || 
-                  order.status === ORDER_STATUS.DELIVERED) && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-green-500" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <TruckIcon className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">In Transit</span>
-                        <span className="text-sm text-gray-500">Completed</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Your order is on the way to your location</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Out for Delivery */}
-                {(order.status === ORDER_STATUS.OUT_FOR_DELIVERY || 
-                  order.status === ORDER_STATUS.DELIVERED) && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-green-500" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <Truck className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Out for Delivery</span>
-                        <span className="text-sm text-gray-500">Completed</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Your order is out for delivery today</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Delivered */}
-                {order.status === ORDER_STATUS.DELIVERED && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-green-500" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Delivered</span>
-                        <span className="text-sm text-gray-500">Completed</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Your order has been delivered successfully</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <OrderTimeline order={displayOrder} baseOrder={order} />
 
             {/* Order Items */}
             <div>
@@ -875,6 +1027,189 @@ const OrdersPage = () => {
     )
   }
 
+  const MobileTrackingModal = ({ order, onClose }) => {
+    if (!order) return null
+
+    const statusInfo = ORDER_STATUS_INFO[order.status]
+
+    return (
+      <div className="fixed inset-0 z-50 flex sm:hidden items-end bg-black/60 backdrop-blur-sm">
+        <div className="w-full bg-white rounded-t-3xl shadow-2xl p-5 max-h-[80vh] overflow-y-auto">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-xs uppercase text-gray-500 tracking-wide">Current Status</p>
+              <div className="mt-1 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                {statusInfo?.label || 'Unknown'}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">Tap through to view each step of your order</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
+            <OrderTimeline order={order} variant="mobile" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const MobileOrderFlowModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null
+
+    const interactiveFilters = statusFilters.filter(filter => filter.value !== ORDER_STATUS.CANCELLED)
+    const cancelledFilter = statusFilters.find(filter => filter.value === ORDER_STATUS.CANCELLED)
+
+    const handleSelect = (status) => {
+      setSelectedStatus(status)
+      onClose()
+    }
+
+    const renderFilterButton = (filter, colorClasses) => {
+      const Icon = filter.icon
+      const isActive = selectedStatus === filter.value
+
+      return (
+        <button
+          key={filter.value}
+          type="button"
+          onClick={() => handleSelect(filter.value)}
+          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
+            isActive
+              ? `${colorClasses.activeBg} ${colorClasses.activeBorder} ${colorClasses.activeText}`
+              : 'bg-white border-gray-200 text-gray-700'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                isActive ? colorClasses.iconActiveBg : 'bg-gray-100'
+              }`}
+            >
+              <Icon
+                className={`w-4 h-4 ${
+                  isActive ? colorClasses.iconActiveText : 'text-gray-500'
+                }`}
+              />
+            </div>
+            <div className="text-left min-w-0">
+              <p className="text-sm font-semibold truncate">{filter.label}</p>
+              <p className="text-xs text-gray-500">Tap to view orders</p>
+            </div>
+          </div>
+          <span
+            className={`text-xs font-semibold px-2 py-1 rounded-full ${
+              isActive ? colorClasses.badgeActiveBg : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {filter.count}
+          </span>
+        </button>
+      )
+    }
+
+    const colorMap = {
+      blue: {
+        activeBg: 'bg-blue-50',
+        activeBorder: 'border-blue-200',
+        activeText: 'text-blue-700',
+        iconActiveBg: 'bg-blue-600',
+        iconActiveText: 'text-white',
+        badgeActiveBg: 'bg-blue-100 text-blue-700'
+      },
+      yellow: {
+        activeBg: 'bg-yellow-50',
+        activeBorder: 'border-yellow-200',
+        activeText: 'text-yellow-700',
+        iconActiveBg: 'bg-yellow-500',
+        iconActiveText: 'text-white',
+        badgeActiveBg: 'bg-yellow-100 text-yellow-700'
+      },
+      orange: {
+        activeBg: 'bg-orange-50',
+        activeBorder: 'border-orange-200',
+        activeText: 'text-orange-700',
+        iconActiveBg: 'bg-orange-500',
+        iconActiveText: 'text-white',
+        badgeActiveBg: 'bg-orange-100 text-orange-700'
+      },
+      green: {
+        activeBg: 'bg-green-50',
+        activeBorder: 'border-green-200',
+        activeText: 'text-green-700',
+        iconActiveBg: 'bg-green-500',
+        iconActiveText: 'text-white',
+        badgeActiveBg: 'bg-green-100 text-green-700'
+      },
+      purple: {
+        activeBg: 'bg-purple-50',
+        activeBorder: 'border-purple-200',
+        activeText: 'text-purple-700',
+        iconActiveBg: 'bg-purple-500',
+        iconActiveText: 'text-white',
+        badgeActiveBg: 'bg-purple-100 text-purple-700'
+      },
+      indigo: {
+        activeBg: 'bg-indigo-50',
+        activeBorder: 'border-indigo-200',
+        activeText: 'text-indigo-700',
+        iconActiveBg: 'bg-indigo-500',
+        iconActiveText: 'text-white',
+        badgeActiveBg: 'bg-indigo-100 text-indigo-700'
+      },
+      red: {
+        activeBg: 'bg-red-50',
+        activeBorder: 'border-red-200',
+        activeText: 'text-red-700',
+        iconActiveBg: 'bg-red-500',
+        iconActiveText: 'text-white',
+        badgeActiveBg: 'bg-red-100 text-red-700'
+      }
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 flex lg:hidden items-end bg-black/60 backdrop-blur-sm">
+        <div className="w-full bg-white rounded-t-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs uppercase text-gray-500 tracking-wide">Order Flow</p>
+              <h3 className="mt-1 text-lg font-semibold text-gray-900">Choose Order Status</h3>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {interactiveFilters
+              .filter(filter => filter.value !== 'all')
+              .map(filter =>
+                renderFilterButton(filter, colorMap[filter.color] || colorMap.blue)
+              )}
+
+            {cancelledFilter && renderFilterButton(cancelledFilter, colorMap.red)}
+
+            {statusFilters
+              .filter(filter => filter.value === 'all')
+              .map(filter =>
+                renderFilterButton(filter, colorMap.blue)
+              )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 sm:px-6 py-6 lg:py-8">
@@ -882,6 +1217,31 @@ const OrdersPage = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
           <p className="text-gray-600">Track your orders and manage your purchases</p>
+        </div>
+
+        {/* Mobile Search & Order Flow CTA */}
+        <div className="lg:hidden mb-6 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Search Orders</h3>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search your orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <Button
+            onClick={() => setShowMobileOrderFlow(true)}
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+          >
+            <TruckIcon className="w-4 h-4" />
+            View Order Flow
+          </Button>
         </div>
 
         {/* Order Summary Cards */}
@@ -914,7 +1274,7 @@ const OrdersPage = () => {
         {/* Two Column Layout: Order Flow (30%) + Orders (70%) */}
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
           {/* Left Sidebar: Order Flow & Search (30%) */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 hidden lg:block">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sticky top-6">
               {/* Search Bar */}
               <div className="mb-6">
@@ -1168,6 +1528,18 @@ const OrdersPage = () => {
           order={selectedOrder}
           onSuccess={handleDateChangeSuccess}
         />
+
+        <MobileOrderFlowModal
+          isOpen={showMobileOrderFlow}
+          onClose={() => setShowMobileOrderFlow(false)}
+        />
+
+        {mobileTrackingOrder && (
+          <MobileTrackingModal
+            order={mobileTrackingOrder}
+            onClose={() => setMobileTrackingOrder(null)}
+          />
+        )}
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { 
   Grid3X3, 
   Building, 
@@ -326,10 +326,21 @@ const ProductsPage = () => {
     };
   })
 
+  const selectedCategoryName = useMemo(() => {
+    if (selectedCategory === 'all') {
+      return null
+    }
+    if (selectedCategory === '') {
+      return null
+    }
+    const matchedCategory = transformedCategories.find(cat => cat.id === selectedCategory)
+    return matchedCategory?.name || null
+  }, [selectedCategory, transformedCategories])
+
   // Filter products based on selected category
-  const filteredProducts = selectedCategory === 'all' 
-    ? products 
-    : products.filter(product => product.category === selectedCategory)
+  const filteredProducts = selectedCategoryName === null
+    ? products
+    : products.filter(product => product.category === selectedCategoryName)
 
   // Handle category selection
   const handleCategorySelect = (categoryId) => {
@@ -711,7 +722,7 @@ const ProductsPage = () => {
                     </div>
 
                     {/* Product Name */}
-                    <h3 className="text-sm font-bold text-gray-800 mb-2 group-hover:text-blue-700 transition-colors line-clamp-1">
+                    <h3 className="text-sm font-bold text-gray-800 mb-2 group-hover:text-blue-700 transition-colors">
                       {product.name}
                     </h3>
 
@@ -749,15 +760,15 @@ const ProductsPage = () => {
                           <div className="flex items-center justify-center w-2.5 h-2.5 mr-1">
                             <Check className="text-green-500 w-2.5 h-2.5" />
                           </div>
-                          <span className="truncate">{feature}</span>
+                          <span className="break-words">{feature}</span>
                         </div>
                       ))}
                     </div>
 
                     {/* Delivery Information - Compact */}
                     {product.deliveryInformation && (
-                      <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded mb-3">
-                        🚚 {product.deliveryInformation.length > 20 ? product.deliveryInformation.substring(0, 20) + '...' : product.deliveryInformation}
+                      <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded mb-3 break-words">
+                        🚚 {product.deliveryInformation}
                       </div>
                     )}
 

@@ -4,7 +4,7 @@ import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useOrders } from '@/contexts/OrdersContext'
 import * as orderService from '@/services/order'
-import { ArrowLeft, CreditCard, Smartphone, Wallet, CheckCircle, MapPin, Calendar, Phone, Mail, User, Building2, Banknote, Receipt } from 'lucide-react'
+import { ArrowLeft, CreditCard, Smartphone, Wallet, CheckCircle, MapPin, Calendar, Phone, Mail, User, Building2, Banknote, Receipt, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -13,7 +13,13 @@ const PaymentPage = () => {
   const location = useLocation()
   const { items, getTotalPrice, deliveryDetails, clearCart } = useCart()
   const { user } = useAuth()
-  const { updateOrderStatus, getOrderById, processPayment } = useOrders()
+  const { getOrderById } = useOrders()
+  
+  const orderIdFromState = location.state?.orderId
+  const isOrderPaymentFlow = Boolean(orderIdFromState)
+  const [orderSummary, setOrderSummary] = useState(null)
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false)
+  const [orderLoadError, setOrderLoadError] = useState(null)
   
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('')
   const [paymentData, setPaymentData] = useState({
@@ -39,13 +45,79 @@ const PaymentPage = () => {
 
   // Redirect if cart is empty or no delivery details
   useEffect(() => {
+    if (isOrderPaymentFlow) {
+      return
+    }
+
     if (items.length === 0) {
       navigate('/products')
+      return
     }
+
     if (!deliveryDetails) {
       navigate('/delivery-details')
     }
-  }, [items, deliveryDetails, navigate])
+  }, [items, deliveryDetails, navigate, isOrderPaymentFlow])
+
+  // Load order summary when coming from orders flow
+  useEffect(() => {
+    if (!isOrderPaymentFlow) return
+
+    const existingOrder = getOrderById(orderIdFromState)
+    if (existingOrder) {
+      setOrderSummary(existingOrder)
+      return
+    }
+
+    const fetchOrder = async () => {
+      setIsLoadingOrder(true)
+      setOrderLoadError(null)
+      try {
+        const response = await orderService.getOrderDetails(orderIdFromState)
+        if (response?.order) {
+          const apiOrder = response.order
+          const transformedOrder = {
+            id: apiOrder.leadId || apiOrder._id,
+            orderNumber: apiOrder.formattedLeadId || apiOrder.leadId || apiOrder._id,
+            items: (apiOrder.items || []).map(item => ({
+              id: item.itemCode?._id || item.itemCode?.id,
+              name: item.itemCode?.itemDescription || 'Product',
+              image: item.itemCode?.primaryImage || '/placeholder-image.jpg',
+              price: item.unitPrice || item.totalCost || 0,
+              currentPrice: item.unitPrice || item.totalCost || 0,
+              quantity: item.qty || item.quantity || 1,
+              totalCost: item.totalCost || (item.unitPrice || 0) * (item.qty || 1)
+            })),
+            totalAmount: apiOrder.totalAmount || 0,
+            finalAmount: apiOrder.totalAmount || 0,
+            deliveryCharges: apiOrder.deliveryCharges || 0,
+            status: apiOrder.orderStatus,
+            paymentStatus: apiOrder.paymentStatus || apiOrder.payment_status,
+            paymentMethod: apiOrder.paymentMethod,
+            orderDate: apiOrder.orderDate,
+            estimatedDelivery: apiOrder.deliveryExpectedDate,
+            deliveryAddress: apiOrder.deliveryAddress,
+            deliveryPincode: apiOrder.deliveryPincode,
+            customerInfo: {
+              name: apiOrder.custUserId?.name || '',
+              phone: apiOrder.custPhoneNum || apiOrder.receiverMobileNum || apiOrder.custUserId?.phone || '',
+              email: apiOrder.custUserId?.email || ''
+            }
+          }
+          setOrderSummary(transformedOrder)
+        } else {
+          setOrderLoadError('Order details not found.')
+        }
+      } catch (error) {
+        console.error('Error loading order details:', error)
+        setOrderLoadError('Failed to load order details.')
+      } finally {
+        setIsLoadingOrder(false)
+      }
+    }
+
+    fetchOrder()
+  }, [isOrderPaymentFlow, orderIdFromState, getOrderById])
 
   // Check payment status on component mount
   useEffect(() => {
@@ -255,89 +327,25 @@ const PaymentPage = () => {
     setIsProcessing(true)
 
     try {
-      // Get order ID from navigation state
-      const orderId = location.state?.orderId
-      
-      if (orderId) {
-        // Map UI payment method to API payment type
-        const paymentTypeMap = {
-          'card': 'credit_card',
-          'upi': 'upi',
-          'wallet': 'wallet',
-          'netbanking': 'net_banking',
-          'cod': 'cash_on_delivery',
-          'rtgs': 'bank_transfer',
-          'neft': 'bank_transfer',
-          'cheque': 'bank_transfer',
-          'dd': 'bank_transfer'
-        }
+      // Just simulate a short processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
 
-        const paymentModeMap = {
-          'card': 'online',
-          'upi': 'online',
-          'wallet': 'online',
-          'netbanking': 'online',
-          'cod': 'cash_on_delivery',
-          'rtgs': 'offline',
-          'neft': 'offline',
-          'cheque': 'offline',
-          'dd': 'offline'
-        }
+      setIsProcessing(false)
+      setOrderPlaced(true)
 
-        // Prepare payment data for API
-        const paymentData = {
-          paymentType: paymentTypeMap[selectedPaymentMethod] || 'credit_card',
-          paymentMode: paymentModeMap[selectedPaymentMethod] || 'online'
-        }
-
-        // Process payment via API
-        const paymentResponse = await processPayment(orderId, paymentData)
-        
-        if (paymentResponse) {
-          // Check payment status after processing
-          try {
-            const statusResponse = await orderService.getPaymentStatus(orderId)
-            if (statusResponse && statusResponse.payment) {
-              setPaymentStatus(statusResponse.payment)
-            }
-          } catch (error) {
-            console.error('Error checking payment status after processing:', error)
-          }
-          
-          // Update order status to confirmed
-          updateOrderStatus(orderId, 'confirmed', 'Payment completed successfully')
-          
-          setIsProcessing(false)
-          setOrderPlaced(true)
-          
-          // Clear cart after successful order
-          setTimeout(() => {
-            clearCart()
-            navigate('/orders', { 
-              state: { 
-                message: 'Order placed successfully!',
-                orderId: orderId 
-              } 
-            })
-          }, 3000)
-        }
-      } else {
-        // Fallback for orders without API integration
-        setTimeout(() => {
-          setIsProcessing(false)
-          setOrderPlaced(true)
-          
-          // Clear cart after successful order
-          setTimeout(() => {
-            clearCart()
-            navigate('/orders', { 
-              state: { 
-                message: 'Order placed successfully!'
-              } 
-            })
-          }, 3000)
-        }, 2000)
+      // Clear cart only for standard checkout flow
+      if (!isOrderPaymentFlow) {
+        clearCart()
       }
+
+      setTimeout(() => {
+        navigate('/orders', {
+          state: {
+            message: 'Payment flow completed!',
+            orderId: orderIdFromState
+          }
+        })
+      }, 2000)
     } catch (error) {
       console.error('Payment processing error:', error)
       setIsProcessing(false)
@@ -345,7 +353,46 @@ const PaymentPage = () => {
     }
   }
 
-  const totalAmount = getTotalPrice()
+  const displayItems = isOrderPaymentFlow ? (orderSummary?.items || []) : items
+  const totalAmount = isOrderPaymentFlow
+    ? orderSummary?.finalAmount || orderSummary?.totalAmount || 0
+    : getTotalPrice()
+  const displayDeliveryDetails = isOrderPaymentFlow
+    ? {
+        fullName: orderSummary?.customerInfo?.name,
+        phoneNumber: orderSummary?.customerInfo?.phone,
+        deliveryAddress: orderSummary?.deliveryAddress,
+        city: '',
+        state: '',
+        pinCode: orderSummary?.deliveryPincode
+      }
+    : deliveryDetails
+
+  if (isOrderPaymentFlow && (isLoadingOrder || (!orderSummary && !orderLoadError))) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isOrderPaymentFlow && orderLoadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full text-center space-y-4">
+          <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
+          <h2 className="text-xl font-semibold text-gray-900">Unable to load order</h2>
+          <p className="text-gray-600">{orderLoadError}</p>
+          <Button onClick={() => navigate('/orders')} className="w-full">
+            Back to Orders
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   if (orderPlaced) {
     return (
@@ -744,22 +791,26 @@ const PaymentPage = () => {
                 <div className="flex items-start space-x-3">
                   <User className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="font-medium text-gray-800">{deliveryDetails?.fullName}</p>
-                    <p className="text-sm text-gray-600">{deliveryDetails?.phoneNumber}</p>
+                    <p className="font-medium text-gray-800">{displayDeliveryDetails?.fullName || '—'}</p>
+                    <p className="text-sm text-gray-600">{displayDeliveryDetails?.phoneNumber || '—'}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-sm text-gray-800">{deliveryDetails?.deliveryAddress}</p>
+                    <p className="text-sm text-gray-800">{displayDeliveryDetails?.deliveryAddress || '—'}</p>
                     <p className="text-sm text-gray-600">
-                      {deliveryDetails?.city}, {deliveryDetails?.state} - {deliveryDetails?.pinCode}
+                      {displayDeliveryDetails?.city || ''}
+                      {displayDeliveryDetails?.city && (displayDeliveryDetails?.state || displayDeliveryDetails?.pinCode) ? ', ' : ''}
+                      {displayDeliveryDetails?.state || ''}
+                      {(displayDeliveryDetails?.state || displayDeliveryDetails?.city) && displayDeliveryDetails?.pinCode ? ' - ' : ''}
+                      {displayDeliveryDetails?.pinCode || ''}
                     </p>
                   </div>
                 </div>
 
-                {deliveryDetails?.preferredDeliveryDate && (
+                {!isOrderPaymentFlow && deliveryDetails?.preferredDeliveryDate && (
                   <div className="flex items-center space-x-3">
                     <Calendar className="w-5 h-5 text-gray-400" />
                     <p className="text-sm text-gray-600">
@@ -775,14 +826,14 @@ const PaymentPage = () => {
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h2>
               
               <div className="space-y-3">
-                {items.map((item) => (
+                {displayItems.map((item) => (
                   <div key={item.id} className="flex justify-between items-center">
                     <div>
                       <p className="font-medium text-gray-800">{item.name}</p>
                       <p className="text-sm text-gray-600">x {item.quantity}</p>
                     </div>
                     <p className="font-semibold text-gray-800">
-                      ₹{(item.currentPrice * item.quantity).toLocaleString()}
+                      ₹{((item.currentPrice || item.price || 0) * (item.quantity || 1)).toLocaleString()}
                     </p>
                   </div>
                 ))}
@@ -799,7 +850,7 @@ const PaymentPage = () => {
 
               <Button
                 onClick={handlePayment}
-                disabled={!selectedPaymentMethod || isProcessing}
+                disabled={!selectedPaymentMethod || isProcessing || (isOrderPaymentFlow && !orderSummary)}
                 className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? 'Processing Payment...' : 'Pay Now'}
