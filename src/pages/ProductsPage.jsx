@@ -30,6 +30,8 @@ import rmcreadymixImage from '@/assets/images/rmcreadymix.png'
 
 const ProductsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedSubCategory, setSelectedSubCategory] = useState('all')
+  const [selectedGrade, setSelectedGrade] = useState('all')
   const [sortBy, setSortBy] = useState('popular')
   const [searchTerm, setSearchTerm] = useState('')
   const [productImageIndex, setProductImageIndex] = useState({}) // Track current image index for each product
@@ -314,6 +316,7 @@ const ProductsPage = () => {
       itemCode: item.itemCode,
       formattedItemCode: item.formattedItemCode,
       subCategory: item.subCategory,
+      grade: item.grade,
       details: item.details,
       deliveryInformation: item.deliveryInformation,
       hscCode: item.hscCode,
@@ -337,14 +340,115 @@ const ProductsPage = () => {
     return matchedCategory?.name || null
   }, [selectedCategory, transformedCategories])
 
-  // Filter products based on selected category
-  const filteredProducts = selectedCategoryName === null
-    ? products
-    : products.filter(product => product.category === selectedCategoryName)
+  // Get unique subcategories and grades for the selected category
+  const availableSubCategories = useMemo(() => {
+    const categoryFiltered = selectedCategoryName === null
+      ? products
+      : products.filter(product => product.category === selectedCategoryName)
+    
+    const subcats = [...new Set(categoryFiltered
+      .map(p => p.subCategory)
+      .filter(Boolean)
+    )].sort()
+    
+    return subcats
+  }, [products, selectedCategoryName])
+
+  const availableGrades = useMemo(() => {
+    const categoryFiltered = selectedCategoryName === null
+      ? products
+      : products.filter(product => product.category === selectedCategoryName)
+    
+    // Filter by subcategory if selected
+    const subcatFiltered = selectedSubCategory === 'all' || !selectedSubCategory
+      ? categoryFiltered
+      : categoryFiltered.filter(p => p.subCategory === selectedSubCategory)
+    
+    const grades = [...new Set(subcatFiltered
+      .map(p => p.grade || p.features?.[0])
+      .filter(Boolean)
+    )].sort()
+    
+    return grades
+  }, [products, selectedCategoryName, selectedSubCategory])
+
+  // Filter, search, and sort products based on selected category, subcategory, grade, search term, and sort option
+  const filteredProducts = useMemo(() => {
+    let filtered = products
+
+    // Filter by category
+    if (selectedCategoryName !== null) {
+      filtered = filtered.filter(product => product.category === selectedCategoryName)
+    }
+
+    // Filter by subcategory
+    if (selectedSubCategory !== 'all' && selectedSubCategory) {
+      filtered = filtered.filter(product => product.subCategory === selectedSubCategory)
+    }
+
+    // Filter by grade
+    if (selectedGrade !== 'all' && selectedGrade) {
+      filtered = filtered.filter(product => {
+        const productGrade = product.grade || product.features?.[0]
+        return productGrade === selectedGrade
+      })
+    }
+
+    // Apply search filter
+    if (searchTerm && searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter(product => {
+        const nameMatch = (product.name || '').toLowerCase().includes(searchLower)
+        const categoryMatch = (product.category || '').toLowerCase().includes(searchLower)
+        const subCategoryMatch = (product.subCategory || '').toLowerCase().includes(searchLower)
+        const descriptionMatch = (product.description || '').toLowerCase().includes(searchLower)
+        const itemCodeMatch = (product.itemCode || product.formattedItemCode || '').toLowerCase().includes(searchLower)
+        const vendorMatch = (product.vendor?.name || product.vendor?.companyName || '').toLowerCase().includes(searchLower)
+        
+        return nameMatch || categoryMatch || subCategoryMatch || descriptionMatch || itemCodeMatch || vendorMatch
+      })
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'popular':
+          // Sort by reviews/rating (higher first)
+          const aPopularity = (a.reviews || 0) * (a.rating || 0)
+          const bPopularity = (b.reviews || 0) * (b.rating || 0)
+          return bPopularity - aPopularity
+        
+        case 'price-low':
+          // Sort by price (low to high)
+          return (a.currentPrice || 0) - (b.currentPrice || 0)
+        
+        case 'price-high':
+          // Sort by price (high to low)
+          return (b.currentPrice || 0) - (a.currentPrice || 0)
+        
+        case 'rating':
+          // Sort by rating (higher first)
+          return (b.rating || 0) - (a.rating || 0)
+        
+        case 'newest':
+          // Sort by newest (if we have createdAt or similar date field)
+          // For now, keep original order if no date field
+          return 0
+        
+        default:
+          return 0
+      }
+    })
+
+    return sorted
+  }, [products, selectedCategoryName, selectedSubCategory, selectedGrade, searchTerm, sortBy])
 
   // Handle category selection
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId)
+    // Reset subcategory and grade when category changes
+    setSelectedSubCategory('all')
+    setSelectedGrade('all')
     if (categoryId === 'all') {
       updateFilters({ category: '', subCategory: '' })
     } else {
@@ -353,6 +457,18 @@ const ProductsPage = () => {
         filterByCategory(categoryName)
       }
     }
+  }
+
+  // Handle subcategory selection
+  const handleSubCategorySelect = (subCategory) => {
+    setSelectedSubCategory(subCategory)
+    // Reset grade when subcategory changes
+    setSelectedGrade('all')
+  }
+
+  // Handle grade selection
+  const handleGradeSelect = (grade) => {
+    setSelectedGrade(grade)
   }
 
   // Handle search with debouncing
@@ -512,6 +628,70 @@ const ProductsPage = () => {
                 )
               })}
             </div>
+
+            {/* Subcategory Filter */}
+            {selectedCategory !== 'all' && availableSubCategories.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3">Subcategory</h4>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleSubCategorySelect('all')}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      selectedSubCategory === 'all'
+                        ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-transparent'
+                    }`}
+                  >
+                    All Subcategories
+                  </button>
+                  {availableSubCategories.map(subCat => (
+                    <button
+                      key={subCat}
+                      onClick={() => handleSubCategorySelect(subCat)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedSubCategory === subCat
+                          ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-transparent'
+                      }`}
+                    >
+                      {subCat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Grade Filter */}
+            {selectedCategory !== 'all' && availableGrades.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3">Grade</h4>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleGradeSelect('all')}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      selectedGrade === 'all'
+                        ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-transparent'
+                    }`}
+                  >
+                    All Grades
+                  </button>
+                  {availableGrades.map(grade => (
+                    <button
+                      key={grade}
+                      onClick={() => handleGradeSelect(grade)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedGrade === grade
+                          ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-transparent'
+                      }`}
+                    >
+                      {grade}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Need Help Section */}
             <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-violet-50 rounded-lg border border-blue-100">
