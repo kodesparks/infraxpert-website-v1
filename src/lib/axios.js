@@ -38,7 +38,6 @@ const FetchRequestData = () => {
       const executeRequest = async (accessToken = null) => {
         const finalHeaders = {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
           ...headers,
         };
         
