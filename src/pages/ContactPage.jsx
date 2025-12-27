@@ -82,7 +82,7 @@ const ContactPage = () => {
                 <Phone className="w-5 h-5 text-blue-600" />
                 <div>
                   <p className="font-semibold">Phone</p>
-                  <p className="text-gray-600">+91 1800-INFRA-01</p>
+                  <p className="text-gray-600">+91 9000390909</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -136,7 +136,7 @@ const ContactPage = () => {
                 <Phone className="w-5 h-5 text-blue-600" />
                 <div>
                   <p className="font-semibold">Emergency Support</p>
-                  <p className="text-gray-600">+91 98765-43210</p>
+                  <p className="text-gray-600">+91 9000390909</p>
                 </div>
               </div>
             </CardContent>

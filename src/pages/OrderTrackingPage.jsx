@@ -351,7 +351,7 @@ const OrderTrackingPage = () => {
                 <h3 className="text-lg font-semibold text-red-800 mb-1">Order Cancelled</h3>
                 <p className="text-red-700">
                   This order has been cancelled. If you have any questions about the cancellation, 
-                  please contact our customer support.
+                  please contact our customer support at +91 9000390909.
                 </p>
               </div>
             </div>
