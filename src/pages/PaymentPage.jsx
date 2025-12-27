@@ -357,7 +357,12 @@
 
         // Clear cart only for standard checkout flow
         if (!isOrderPaymentFlow) {
-          clearCart()
+          try {
+            await clearCart()
+          } catch (error) {
+            console.error('Error clearing cart:', error)
+            // Continue even if cart clear fails
+          }
         }
 
         setTimeout(() => {

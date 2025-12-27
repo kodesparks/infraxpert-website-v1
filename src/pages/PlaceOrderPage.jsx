@@ -137,8 +137,13 @@ const PlaceOrderPage = () => {
           setOrderPlaced(true)
           
           // Clear cart and redirect to orders page after success
-          setTimeout(() => {
-            clearCart()
+          setTimeout(async () => {
+            try {
+              await clearCart()
+            } catch (error) {
+              console.error('Error clearing cart:', error)
+              // Continue even if cart clear fails
+            }
             navigate('/orders', { 
               state: { 
                 message: 'Order placed successfully!',

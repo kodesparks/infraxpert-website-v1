@@ -206,8 +206,18 @@ export const CartProvider = ({ children }) => {
     }
   }
 
-  const clearCart = () => {
-    dispatch({ type: 'CLEAR_CART' })
+  const clearCart = async () => {
+    try {
+      // Call API to clear all pending orders from cart
+      await orderService.clearCart()
+      // Update local cart state after successful API call
+      dispatch({ type: 'CLEAR_CART' })
+    } catch (error) {
+      console.error('Error clearing cart via API:', error)
+      // Still clear local state even if API fails
+      dispatch({ type: 'CLEAR_CART' })
+      throw error
+    }
   }
 
   const setDeliveryDetails = (details) => {
