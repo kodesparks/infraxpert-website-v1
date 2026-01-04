@@ -29,7 +29,6 @@ const ORDER_JOURNEY = [
   { status: 'order_confirmed', label: 'Order Confirmed', icon: CheckCircle2 },
   { status: 'truck_loading', label: 'Loading for Dispatch', icon: TruckIcon },
   { status: 'in_transit', label: 'In Transit', icon: Truck },
-  { status: 'shipped', label: 'Shipped', icon: Package },
   { status: 'out_for_delivery', label: 'Out for Delivery', icon: Home },
   { status: 'delivered', label: 'Delivered', icon: PackageCheck }
 ]
@@ -85,14 +84,6 @@ const STATUS_CONFIG = {
     borderColor: 'border-blue-200',
     description: 'Your order is on the way to the delivery location.',
     animated: true
-  },
-  shipped: {
-    label: 'Shipped',
-    icon: Package,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
-    description: 'Your order has been shipped and is in transit.'
   },
   out_for_delivery: {
     label: 'Out for Delivery',
@@ -493,29 +484,6 @@ const OrderTrackingPage = () => {
             </Card>
           )}
 
-          {/* Vendor Information */}
-          {tracking.vendor && (
-            <Card className="p-6 md:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                Vendor Information
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {tracking.vendor.name && (
-                  <div>
-                    <p className="text-sm text-gray-600">Vendor Name</p>
-                    <p className="font-semibold text-gray-800">{tracking.vendor.name}</p>
-                  </div>
-                )}
-                {tracking.vendor.companyName && (
-                  <div>
-                    <p className="text-sm text-gray-600">Company Name</p>
-                    <p className="font-semibold text-gray-800">{tracking.vendor.companyName}</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
         </div>
 
         {/* Action Buttons */}

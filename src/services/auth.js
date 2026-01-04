@@ -258,6 +258,35 @@ export async function resetPassword(data) {
 }
 
 /**
+ * Change user password
+ * @param {Object} data - Change password data
+ * @param {string} data.currentPassword - Current password
+ * @param {string} data.newPassword - New password
+ * @returns {Promise<Object|null>} Change password response
+ */
+export async function changePassword(data) {
+  const { apiRequest } = FetchRequestData();
+
+  try {
+    const response = await apiRequest({
+      url: URLS.changePassword,
+      method: "put",
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      data: data
+    });
+
+    if (response && response.data) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error changing password:", error);
+    throw error;
+  }
+}
+
+/**
  * Logout user by calling backend logout and clearing session data
  */
 export async function logoutUser() {

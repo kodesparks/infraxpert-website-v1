@@ -32,7 +32,7 @@ const ProductsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedSubCategory, setSelectedSubCategory] = useState('all')
   const [selectedGrade, setSelectedGrade] = useState('all')
-  const [sortBy, setSortBy] = useState('popular')
+  const [sortBy, setSortBy] = useState('price-low')
   const [searchTerm, setSearchTerm] = useState('')
   const [productImageIndex, setProductImageIndex] = useState({}) // Track current image index for each product
   
@@ -412,12 +412,6 @@ const ProductsPage = () => {
     // Apply sorting
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
-        case 'popular':
-          // Sort by reviews/rating (higher first)
-          const aPopularity = (a.reviews || 0) * (a.rating || 0)
-          const bPopularity = (b.reviews || 0) * (b.rating || 0)
-          return bPopularity - aPopularity
-        
         case 'price-low':
           // Sort by price (low to high)
           return (a.currentPrice || 0) - (b.currentPrice || 0)
@@ -425,10 +419,6 @@ const ProductsPage = () => {
         case 'price-high':
           // Sort by price (high to low)
           return (b.currentPrice || 0) - (a.currentPrice || 0)
-        
-        case 'rating':
-          // Sort by rating (higher first)
-          return (b.rating || 0) - (a.rating || 0)
         
         case 'newest':
           // Sort by newest (if we have createdAt or similar date field)
@@ -778,10 +768,8 @@ const ProductsPage = () => {
                     disabled={loading}
                     className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-700 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="popular">Sort by: Popular</option>
                   <option value="price-low">Price: Low to High</option>
                   <option value="price-high">Price: High to Low</option>
-                  <option value="rating">Rating</option>
                   <option value="newest">Newest</option>
                 </select>
                 </div>
@@ -820,7 +808,7 @@ const ProductsPage = () => {
               {filteredProducts.map(product => (
                 <div 
                   key={product.id} 
-                  className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer"
+                  className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col h-full"
                 >
                   {/* Product Image with Slideshow */}
                   <div className="relative overflow-hidden">
@@ -886,7 +874,7 @@ const ProductsPage = () => {
                   </div>
 
                   {/* Product Details */}
-                  <div className="p-3 sm:p-4 lg:p-5">
+                  <div className="p-3 sm:p-4 lg:p-5 flex flex-col flex-grow">
                     {/* Brand and Stock Status */}
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded">
@@ -918,21 +906,6 @@ const ProductsPage = () => {
                       )}
                     </div>
 
-                    {/* Rating */}
-                    <div className="flex items-center mb-2">
-                      <div className="flex items-center">
-                        <div className="flex items-center justify-center w-3 h-3 mr-1">
-                          <Star className="text-yellow-400 text-xs fill-current" />
-                        </div>
-                        <span className="text-xs font-medium text-gray-700 mr-1">
-                          {product.rating}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          ({product.reviews})
-                        </span>
-                      </div>
-                    </div>
-
                     {/* Features - Show only first 2 */}
                     <div className="mb-3">
                       {product.features.slice(0, 2).map((feature, index) => (
@@ -944,13 +917,6 @@ const ProductsPage = () => {
                         </div>
                       ))}
                     </div>
-
-                    {/* Delivery Information - Compact */}
-                    {product.deliveryInformation && (
-                      <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded mb-3 break-words">
-                        🚚 {product.deliveryInformation}
-                      </div>
-                    )}
 
                     {/* Pricing */}
                     <div className="mb-3">
@@ -1004,15 +970,12 @@ const ProductsPage = () => {
                             </span>
                           </div>
                           
-                          {/* Distance and Warehouse Info */}
-                          <div className="text-xs text-gray-500 text-center space-y-1">
-                            <div>📍 {product.distance}km from {product.warehouseName}</div>
-                            {!product.isDeliveryAvailable && product.deliveryReason && (
-                              <div className="text-red-600 text-xs mt-1">
-                                {product.deliveryReason}
-                              </div>
-                            )}
-                          </div>
+                          {/* Delivery Reason if not available */}
+                          {!product.isDeliveryAvailable && product.deliveryReason && (
+                            <div className="text-red-600 text-xs mt-1 text-center">
+                              {product.deliveryReason}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div>
@@ -1045,7 +1008,7 @@ const ProductsPage = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex space-x-2">
+                    <div className="mt-auto pt-3">
                       <button 
                         onClick={() => {
                           console.log('🛒 Adding to cart with pincode:', userPincode)
@@ -1056,18 +1019,13 @@ const ProductsPage = () => {
                           window.dispatchEvent(new CustomEvent('openCartDrawer'))
                         }}
                         disabled={!product.isDeliveryAvailable}
-                        className={`flex-1 py-2 px-3 rounded-lg font-medium transition-colors text-sm ${
+                        className={`w-full py-2 px-3 rounded-lg font-medium transition-colors text-sm ${
                           product.isDeliveryAvailable 
                             ? 'bg-blue-700 text-white hover:bg-violet-700 cursor-pointer' 
                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
                       >
                         {product.isDeliveryAvailable ? 'Add to Cart' : 'Delivery Not Available'}
-                      </button>
-                      <button className="px-3 py-2 border-2 border-blue-700 text-blue-700 rounded-lg hover:bg-blue-700 hover:text-white transition-colors cursor-pointer">
-                        <div className="flex items-center justify-center w-4 h-4">
-                          <Eye className="text-sm" />
-                        </div>
                       </button>
                     </div>
                   </div>

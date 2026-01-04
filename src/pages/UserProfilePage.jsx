@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { 
   User, 
   Mail, 
@@ -14,11 +16,29 @@ import {
   CheckCircle, 
   XCircle,
   Edit,
-  LogOut
+  LogOut,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react'
+import * as authService from '@/services/auth'
 
 const UserProfilePage = () => {
   const { user, logout } = useAuth()
+  const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  })
+  const [passwordErrors, setPasswordErrors] = useState({})
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false)
 
   if (!user) {
     return (
@@ -66,6 +86,62 @@ const UserProfilePage = () => {
         return 'bg-purple-100 text-purple-800 border-purple-200'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault()
+    const errors = {}
+
+    if (!passwordData.currentPassword) {
+      errors.currentPassword = 'Current password is required'
+    }
+    if (!passwordData.newPassword) {
+      errors.newPassword = 'New password is required'
+    } else if (passwordData.newPassword.length < 6) {
+      errors.newPassword = 'Password must be at least 6 characters'
+    }
+    if (!passwordData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your new password'
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match'
+    }
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      errors.newPassword = 'New password must be different from current password'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors)
+      return
+    }
+
+    setIsChangingPassword(true)
+    setPasswordErrors({})
+
+    try {
+      await authService.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      })
+      setPasswordChangeSuccess(true)
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+      setTimeout(() => {
+        setPasswordChangeSuccess(false)
+        setShowPasswordChange(false)
+      }, 3000)
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to change password. Please try again.'
+      if (errorMessage.includes('current password') || errorMessage.includes('incorrect')) {
+        setPasswordErrors({ currentPassword: 'Current password is incorrect' })
+      } else {
+        setPasswordErrors({ general: errorMessage })
+      }
+    } finally {
+      setIsChangingPassword(false)
     }
   }
 
@@ -263,6 +339,132 @@ const UserProfilePage = () => {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Password Change */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center text-gray-800">
+                  <Lock className="w-5 h-5 mr-2" />
+                  Change Password
+                </CardTitle>
+                <CardDescription>
+                  Update your account password for better security
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!showPasswordChange ? (
+                  <Button
+                    onClick={() => setShowPasswordChange(true)}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Change Password
+                  </Button>
+                ) : (
+                  <form onSubmit={handlePasswordChange} className="space-y-4">
+                    {passwordChangeSuccess && (
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                        Password changed successfully!
+                      </div>
+                    )}
+                    {passwordErrors.general && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                        {passwordErrors.general}
+                      </div>
+                    )}
+                    <div>
+                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="currentPassword"
+                          type={showPasswords.current ? 'text' : 'password'}
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          className={passwordErrors.currentPassword ? 'border-red-500' : ''}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {passwordErrors.currentPassword && (
+                        <p className="text-red-500 text-sm mt-1">{passwordErrors.currentPassword}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="newPassword"
+                          type={showPasswords.new ? 'text' : 'password'}
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          className={passwordErrors.newPassword ? 'border-red-500' : ''}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {passwordErrors.newPassword && (
+                        <p className="text-red-500 text-sm mt-1">{passwordErrors.newPassword}</p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showPasswords.confirm ? 'text' : 'password'}
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          className={passwordErrors.confirmPassword ? 'border-red-500' : ''}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {passwordErrors.confirmPassword && (
+                        <p className="text-red-500 text-sm mt-1">{passwordErrors.confirmPassword}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="submit"
+                        disabled={isChangingPassword}
+                        className="flex-1"
+                      >
+                        {isChangingPassword ? 'Changing...' : 'Change Password'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowPasswordChange(false)
+                          setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+                          setPasswordErrors({})
+                          setPasswordChangeSuccess(false)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </CardContent>
             </Card>
 

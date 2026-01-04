@@ -500,10 +500,10 @@ const CartDrawer = ({ isOpen, onClose }) => {
                     )}
                   </div>
 
-                  {/* Phone Number */}
+                  {/* Receiver Phone Number */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number *
+                      Receiver Phone Number *
                     </label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -511,7 +511,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
                         name="phoneNumber"
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
-                        placeholder="Enter your phone number"
+                        placeholder="Enter receiver phone number"
                         className={`pl-10 ${errors.phoneNumber ? 'border-red-500' : ''}`}
                       />
                     </div>

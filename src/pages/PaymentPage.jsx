@@ -446,13 +446,14 @@
             <h1 className="text-2xl font-bold text-gray-800">Payment</h1>
             <button
               onClick={() => navigate(-1)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all duration-200 flex items-center gap-2 font-medium"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Back</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Side - Payment Methods */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg p-6 shadow-sm sticky top-6">
@@ -496,7 +497,7 @@
             </div>
 
             {/* Right Side - Payment Details and Order Summary */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-1 space-y-6">
               {/* Payment Form */}
               {selectedPaymentMethod && (
                 <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -810,11 +811,18 @@
 
                   {selectedPaymentMethod === 'manual_utr' && (
                     <div className="space-y-4">
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <h3 className="font-semibold text-blue-800 mb-2">Manual UTR Entry</h3>
-                        <p className="text-sm text-blue-700">
-                          Enter the UTR (Unique Transaction Reference) number from your bank transfer. 
-                          Your order will be processed after verification.
+                      <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                        <h3 className="font-semibold text-blue-800 mb-3 text-lg">Bank Transfer Details</h3>
+                        <div className="bg-white p-4 rounded-lg mb-4 space-y-2">
+                          <p className="text-sm font-semibold text-gray-700">Bank Account Details:</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Account Name:</span> InfraXpert Solutions</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Account Number:</span> 123456789012</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">IFSC Code:</span> SBIN0001234</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Bank Name:</span> State Bank of India</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Branch:</span> Gurugram Main Branch</p>
+                        </div>
+                        <p className="text-sm text-blue-700 font-medium">
+                          After transferring the amount, enter the UTR number below. Your order will be processed after verification.
                         </p>
                       </div>
 
@@ -883,8 +891,9 @@
                   <div className="flex items-start space-x-3">
                     <User className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="font-medium text-gray-800">{displayDeliveryDetails?.fullName || '—'}</p>
-                      <p className="text-sm text-gray-600">{displayDeliveryDetails?.phoneNumber || '—'}</p>
+                      <p className="text-sm font-medium text-gray-600 mb-1">Customer Name</p>
+                      <p className="font-semibold text-gray-800 text-base">{displayDeliveryDetails?.fullName || user?.name || '—'}</p>
+                      <p className="text-sm text-gray-600 mt-1">Receiver Phone: {displayDeliveryDetails?.phoneNumber || '—'}</p>
                     </div>
                   </div>
 

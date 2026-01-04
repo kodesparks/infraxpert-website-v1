@@ -925,26 +925,8 @@ const OrdersPage = () => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h3>
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">
-                    ₹{(displayOrder.totalAmount || displayOrder.subTotal || 0).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Delivery Charges:</span>
-                  <span className="font-medium">
-                    ₹{(displayOrder.deliveryCharges || displayOrder.deliveryCost || 0).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tax:</span>
-                  <span className="font-medium">
-                    ₹{(displayOrder.taxAmount || displayOrder.tax || 0).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span className="font-semibold text-gray-900">Total:</span>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold text-gray-900">Total Amount:</span>
                   <span className="font-semibold text-gray-900">
                     ₹{(displayOrder.finalAmount || displayOrder.totalAmount || displayOrder.grandTotal || 0).toLocaleString()}
                   </span>

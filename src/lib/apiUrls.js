@@ -8,6 +8,7 @@ export const URLS = {
   refreshToken: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh-token`,
   logout: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/logout`,
   userDetails: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/user`,
+  changePassword: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/change-password`,
   
   // User profile APIs
   updateProfile: (id) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/${id}`,
