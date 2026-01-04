@@ -193,13 +193,11 @@ const ContactPage = () => {
                 Phone (Landline)
               </h4>
               <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                <a href="tel:+919000390909" className="hover:text-blue-600 transition-colors">
+                <a href="tel:+919000390909" className="hover:text-blue-600 transition-colors font-medium">
                   +91 9000390909
                 </a>
                 <br />
-                <a href="tel:+919000390910" className="hover:text-blue-600 transition-colors">
-                  +91 9000390910
-                </a>
+                <span className="text-xs text-gray-600 mt-2 block">Our official customer care number</span>
               </p>
             </div>
 
@@ -211,10 +209,8 @@ const ContactPage = () => {
               <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 uppercase tracking-wide">
                 Our Office Location
               </h4>
-              <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                InfraXpert Solutions<br />
-                The Courtyard, Al Quoz 1<br />
-                Gurugram, Haryana, India
+              <p className="text-sm sm:text-base text-gray-700 leading-relaxed font-medium">
+                India
               </p>
             </div>
           </div>
