@@ -114,7 +114,6 @@ const OrdersPage = () => {
     { value: ORDER_STATUS.ORDER_CONFIRMED, label: 'Order Confirmed', count: stats.orderConfirmed, icon: CheckCircle, color: 'green' },
     { value: ORDER_STATUS.TRUCK_LOADING, label: 'Loading', count: stats.truckLoading, icon: Truck, color: 'orange' },
     { value: ORDER_STATUS.SHIPPED, label: 'Dispatched', count: stats.shipped, icon: Package, color: 'indigo' },
-    { value: ORDER_STATUS.IN_TRANSIT, label: 'On the Way', count: stats.inTransit, icon: Truck, color: 'blue' },
     { value: ORDER_STATUS.OUT_FOR_DELIVERY, label: 'Out for Delivery', count: stats.outForDelivery, icon: Truck, color: 'green' },
     { value: ORDER_STATUS.DELIVERED, label: 'Delivered', count: stats.delivered, icon: CheckCircle, color: 'green' },
     { value: ORDER_STATUS.CANCELLED, label: 'Cancelled', count: stats.cancelled, icon: XCircle, color: 'red' }
@@ -674,13 +673,9 @@ const OrdersPage = () => {
 
         {/* Order Summary */}
         <div className="bg-gray-50 rounded p-2 mb-3">
-          <div className="flex justify-between items-center mb-1">
+          <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">Total</span>
             <span className="text-sm font-bold text-gray-900">₹{(order.finalAmount || 0).toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between items-center text-xs text-gray-500">
-            <span>Payment: {order.paymentMethod || 'N/A'}</span>
-            <span>Est: {formatDate(order.estimatedDelivery)}</span>
           </div>
         </div>
 
