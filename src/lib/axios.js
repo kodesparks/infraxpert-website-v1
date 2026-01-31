@@ -20,6 +20,7 @@ const FetchRequestData = () => {
    * @param {"get" | "post" | "put" | "delete" | "patch"} method - The HTTP method to use for the request.
    * @param {any} data - Optional data to send with the request, applicable for POST, PUT, PATCH requests.
    * @param {Object} headers - Optional custom headers to be added to the request.
+   * @param {string} responseType - Optional response type (e.g. 'blob' for PDF/binary).
    * 
    * @returns {Promise} - Returns a Promise that resolves with the Axios response or rejects with an error.
    */
@@ -29,7 +30,8 @@ const FetchRequestData = () => {
     sessionSource, 
     method, 
     data, 
-    headers = {} 
+    headers = {},
+    responseType
   }) => {
     return new Promise(async (resolve, reject) => {
       let axiosInstance = axios;
@@ -54,11 +56,9 @@ const FetchRequestData = () => {
         });
 
         // Execute the request
-        return axiosInstance({
-          method,
-          url: url,
-          data,
-        });
+        const requestConfig = { method, url, data };
+        if (responseType) requestConfig.responseType = responseType;
+        return axiosInstance(requestConfig);
       };
 
       try {

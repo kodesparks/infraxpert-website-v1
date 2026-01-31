@@ -175,18 +175,19 @@ export async function registerUser(userData) {
     });
     
     if (response?.status === 200 || response?.status === 201) {
-      // Store tokens and user data if registration includes auto-login
-      if (response.data.accessToken && response.data.refreshToken) {
-        const tokenData = {
-          accessToken: response.data.accessToken,
-          refreshToken: response.data.refreshToken
-        };
-        setSession(tokenData);
+      const data = response.data;
+      // Customer signup with requiresVerification: no tokens — do not store session
+      if (data.requiresVerification && !data.accessToken) {
+        return data;
       }
-      if (response.data.user) {
-        setUserDetails(response.data.user);
+      // Non-customer or auto-login: store tokens and user
+      if (data.accessToken && data.refreshToken) {
+        setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken });
       }
-      return response.data;
+      if (data.user) {
+        setUserDetails(data.user);
+      }
+      return data;
     }
   } catch (error) {
     if (error.code === "ERR_BAD_REQUEST") {
@@ -255,6 +256,93 @@ export async function resetPassword(data) {
     console.error("Error resetting password:", error);
     throw error;
   }
+}
+
+/**
+ * Send verification email (after signup or "Resend"). Auth: Bearer token required.
+ * @returns {Promise<Object>} { message } on 200; throws on 400 (already verified) or 503 (send failed)
+ */
+export async function sendVerificationEmail() {
+  const { apiRequest } = FetchRequestData();
+  const response = await apiRequest({
+    url: URLS.sendVerifyEmail,
+    method: 'post',
+    setAuthznHeader: true,
+    sessionSource: 'cookie',
+  });
+  return response?.data ?? {};
+}
+
+/**
+ * Verify email with token from link. GET /api/auth/verify-email?token=xxx (no auth).
+ * Success 200: { message, user, accessToken, refreshToken } — frontend stores tokens and redirects.
+ * @param {string} token - Token from email link
+ * @returns {Promise<Object>} response data; throws on 400 (invalid/expired)
+ */
+export async function verifyEmail(token) {
+  const { apiRequest } = FetchRequestData();
+  const response = await apiRequest({
+    url: URLS.verifyEmail(token),
+    method: 'get',
+    setAuthznHeader: false,
+    sessionSource: 'cookie',
+  });
+  return response?.data ?? {};
+}
+
+/**
+ * Verify email with 6-digit OTP. POST /api/auth/verify-email with body { email, otp }.
+ * Success 200: { message, user, accessToken, refreshToken } — frontend stores tokens and redirects.
+ * @param {string} email - User email
+ * @param {string} otp - 6-digit code from email
+ * @returns {Promise<Object>} response data; throws on 400 (invalid/expired)
+ */
+export async function verifyEmailWithOtp(email, otp) {
+  const { apiRequest } = FetchRequestData();
+  const response = await apiRequest({
+    url: URLS.verifyEmailPost,
+    method: 'post',
+    setAuthznHeader: false,
+    sessionSource: 'cookie',
+    data: { email: email.trim(), otp: otp.trim() },
+  });
+  return response?.data ?? {};
+}
+
+/**
+ * Send OTP for customer verification. POST /api/auth/otp/generate. OTP is sent to the user's email (Zoho SMTP).
+ * @param {string} phone - 10-digit Indian mobile (identifies the user)
+ * @returns {Promise<Object>} { message: "OTP sent to your email", sendChannel: "email" } on 200; throws on 404 (user not found)
+ * Caller should show: "Check your email for the 6-digit code"
+ */
+export async function sendOtp(phone) {
+  const { apiRequest } = FetchRequestData();
+  const response = await apiRequest({
+    url: URLS.otpGenerate,
+    method: 'post',
+    setAuthznHeader: false,
+    sessionSource: 'cookie',
+    data: { phone },
+  });
+  return response?.data ?? {};
+}
+
+/**
+ * Verify OTP. POST /api/auth/otp/verify. Success 200: { message, user, accessToken, refreshToken } — store tokens and redirect.
+ * @param {string} phone - 10-digit Indian mobile
+ * @param {string} otp - OTP code
+ * @returns {Promise<Object>} response data; throws on 400 (invalid/expired OTP)
+ */
+export async function verifyOtp(phone, otp) {
+  const { apiRequest } = FetchRequestData();
+  const response = await apiRequest({
+    url: URLS.otpVerify,
+    method: 'post',
+    setAuthznHeader: false,
+    sessionSource: 'cookie',
+    data: { phone, otp },
+  });
+  return response?.data ?? {};
 }
 
 /**

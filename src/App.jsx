@@ -1,5 +1,5 @@
-
 import React from 'react'
+import { Toaster } from 'sonner'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CartProvider } from '@/contexts/CartContext'
@@ -16,6 +16,7 @@ import ContactPage from '@/pages/ContactPage'
 import LoginPage from '@/pages/LoginPage'
 import SignupPage from '@/pages/SignupPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
+import VerifyEmailPage from '@/pages/VerifyEmailPage'
 import UserProfilePage from '@/pages/UserProfilePage'
 import DeliveryDetailsPage from '@/pages/DeliveryDetailsPage'
 import PaymentPage from '@/pages/PaymentPage'
@@ -27,6 +28,7 @@ import './App.css'
 function App() {
   return (
     <Router>
+      <Toaster position="top-center" richColors closeButton duration={4000} />
       <AuthProvider>
         <PincodeProvider>
           <CartProvider>
@@ -46,6 +48,11 @@ function App() {
           <Route path="/forgot-password" element={
             <AuthLayout>
               <ForgotPasswordPage />
+            </AuthLayout>
+          } />
+          <Route path="/verify-email" element={
+            <AuthLayout>
+              <VerifyEmailPage />
             </AuthLayout>
           } />
           

@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { setUserDetails } from '@/lib/session'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,7 @@ import {
 import * as authService from '@/services/auth'
 
 const UserProfilePage = () => {
-  const { user, logout } = useAuth()
+  const { user, logout, setUser } = useAuth()
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -39,6 +40,23 @@ const UserProfilePage = () => {
   const [passwordErrors, setPasswordErrors] = useState({})
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false)
+  const [resendEmailLoading, setResendEmailLoading] = useState(false)
+  const [resendEmailMessage, setResendEmailMessage] = useState(null) // { type: 'success'|'error', text }
+  const isEmailVerified = user?.isEmailVerified ?? user?.emailVerified ?? false
+
+  // Refetch profile on mount so emailVerified is up to date
+  useEffect(() => {
+    let cancelled = false
+    authService.getUserDetailsFromAPI().then((data) => {
+      if (cancelled || !data) return
+      const updatedUser = data.user ?? data
+      if (updatedUser && Object.keys(updatedUser).length) {
+        setUserDetails(updatedUser)
+        setUser(updatedUser)
+      }
+    })
+    return () => { cancelled = true }
+  }, [setUser])
 
   if (!user) {
     return (
@@ -86,6 +104,26 @@ const UserProfilePage = () => {
         return 'bg-purple-100 text-purple-800 border-purple-200'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const handleResendVerificationEmail = async () => {
+    setResendEmailMessage(null)
+    setResendEmailLoading(true)
+    try {
+      const data = await authService.sendVerificationEmail()
+      setResendEmailMessage({ type: 'success', text: data?.message || 'Verification email sent. Check your inbox.' })
+      setTimeout(() => setResendEmailMessage(null), 5000)
+    } catch (err) {
+      const status = err.response?.status
+      const msg = err.response?.data?.message || 'Could not send verification email.'
+      const hint = err.response?.data?.hint
+      setResendEmailMessage({
+        type: 'error',
+        text: status === 400 ? msg : status === 503 ? `${msg} ${hint || ''}` : msg
+      })
+    } finally {
+      setResendEmailLoading(false)
     }
   }
 
@@ -259,19 +297,38 @@ const UserProfilePage = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="flex items-center space-x-3">
-                    {user.isEmailVerified ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Email</p>
-                      <p className={`text-sm ${user.isEmailVerified ? 'text-green-600' : 'text-red-600'}`}>
-                        {user.isEmailVerified ? 'Verified' : 'Not Verified'}
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 gap-2">
+                    <div className="flex items-center space-x-3">
+                      {isEmailVerified ? (
+                        <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Email</p>
+                        <p className={`text-sm ${isEmailVerified ? 'text-green-600' : 'text-red-600'}`}>
+                          {isEmailVerified ? 'Verified' : 'Not Verified'}
+                        </p>
+                      </div>
                     </div>
+                    {!isEmailVerified && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs shrink-0"
+                        onClick={handleResendVerificationEmail}
+                        disabled={resendEmailLoading}
+                      >
+                        {resendEmailLoading ? 'Sending…' : 'Resend verification email'}
+                      </Button>
+                    )}
                   </div>
+                {resendEmailMessage && (
+                  <div className={`col-span-full p-3 rounded-lg text-sm ${resendEmailMessage.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                    {resendEmailMessage.text}
+                  </div>
+                )}
                   <div className="flex items-center space-x-3">
                     {user.isPhoneVerified ? (
                       <CheckCircle className="w-5 h-5 text-green-500" />

@@ -66,6 +66,12 @@ const OrdersPage = () => {
   const [showDateModal, setShowDateModal] = useState(false)
   const [changeEligibility, setChangeEligibility] = useState(null)
   const [isLoadingEligibility, setIsLoadingEligibility] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState({ quote: null, salesOrder: null, invoice: null, ewaybill: null })
+  const [quoteGeneratingForLeadId, setQuoteGeneratingForLeadId] = useState(null)
+
+  const isOrderPlacedOnly = (status) => status === ORDER_STATUS.ORDER_PLACED
+  const isOrderAcceptedOrLater = (status) => status && status !== ORDER_STATUS.PENDING && status !== ORDER_STATUS.ORDER_PLACED
+  const isDeliveryStage = (status) => [ORDER_STATUS.IN_TRANSIT, ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED].includes(status)
 
   // Load orders on component mount
   useEffect(() => {
@@ -232,6 +238,42 @@ const OrdersPage = () => {
     }
     // You can add a toast notification here
     console.log('Success:', message)
+  }
+
+  const getLeadId = (order) => order?.leadId || order?.id || order?.orderNumber
+
+  const handleDownloadPdf = async (order, type) => {
+    const leadId = getLeadId(order)
+    if (!leadId) return
+    const keyMap = { quote: 'quote', 'sales-order': 'salesOrder', invoice: 'invoice', ewaybill: 'ewaybill' }
+    const key = keyMap[type] || type
+    setPdfLoading(prev => ({ ...prev, [key]: leadId }))
+    if (type === 'quote') setQuoteGeneratingForLeadId(prev => (prev === leadId ? null : prev))
+    try {
+      let blob
+      const nameMap = {
+        quote: `quote-${leadId}.pdf`,
+        'sales-order': `sales-order-${leadId}.pdf`,
+        invoice: `invoice-${leadId}.pdf`,
+        ewaybill: `ewaybill-${leadId}.pdf`
+      }
+      if (type === 'quote') blob = await orderService.getQuotePdf(leadId)
+      else if (type === 'sales-order') blob = await orderService.getSalesOrderPdf(leadId)
+      else if (type === 'invoice') blob = await orderService.getInvoicePdf(leadId)
+      else if (type === 'ewaybill') blob = await orderService.getEwaybillPdf(leadId)
+      else return
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = nameMap[type] || `${type}-${leadId}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      if (type === 'quote' && err.response?.status === 404) setQuoteGeneratingForLeadId(leadId)
+      else console.error(`Error downloading ${type} PDF:`, err)
+    } finally {
+      setPdfLoading(prev => ({ ...prev, [key]: null }))
+    }
   }
 
   const OrderTimeline = ({ order, baseOrder, variant = 'desktop' }) => {
@@ -689,7 +731,7 @@ const OrdersPage = () => {
             <span>View</span>
           </button>
           
-          <div className="flex space-x-1">
+          <div className="flex flex-wrap gap-1">
             {canTrackOrder(order.status) && (
               <Button
                 onClick={() => handleTrackOrder(order)}
@@ -711,14 +753,54 @@ const OrdersPage = () => {
                 Rate
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs border-gray-200 text-gray-600 hover:bg-gray-50 px-2 py-1 h-6"
-            >
-              <Download className="w-3 h-3 mr-1" />
-              Invoice
-            </Button>
+            {isOrderPlacedOnly(order.status) && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs border-gray-200 text-gray-600 hover:bg-gray-50 px-2 py-1 h-6"
+                onClick={() => handleDownloadPdf(order, 'quote')}
+                disabled={pdfLoading.quote === getLeadId(order)}
+              >
+                <Download className="w-3 h-3 mr-1" />
+                {pdfLoading.quote === getLeadId(order) ? '…' : 'Quote'}
+              </Button>
+            )}
+            {isOrderAcceptedOrLater(order.status) && !isDeliveryStage(order.status) && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs border-gray-200 text-gray-600 hover:bg-gray-50 px-2 py-1 h-6"
+                onClick={() => handleDownloadPdf(order, 'sales-order')}
+                disabled={pdfLoading.salesOrder === getLeadId(order)}
+              >
+                <Download className="w-3 h-3 mr-1" />
+                {pdfLoading.salesOrder === getLeadId(order) ? '…' : 'Sales Order'}
+              </Button>
+            )}
+            {isDeliveryStage(order.status) && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs border-gray-200 text-gray-600 hover:bg-gray-50 px-2 py-1 h-6"
+                  onClick={() => handleDownloadPdf(order, 'invoice')}
+                  disabled={pdfLoading.invoice === getLeadId(order)}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  {pdfLoading.invoice === getLeadId(order) ? '…' : 'Invoice'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs border-gray-200 text-gray-600 hover:bg-gray-50 px-2 py-1 h-6"
+                  onClick={() => handleDownloadPdf(order, 'ewaybill')}
+                  disabled={pdfLoading.ewaybill === getLeadId(order)}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  {pdfLoading.ewaybill === getLeadId(order) ? '…' : 'E-way bill'}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -944,6 +1026,71 @@ const OrdersPage = () => {
                       {displayOrder.paymentStatus}
                     </span>
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* Documents: one stage only — Order placed = Quote; Order accepted = Sales Order; Delivery = Invoice + E-way bill */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
+              {isOrderPlacedOnly(displayOrder.status) && quoteGeneratingForLeadId === getLeadId(order) && (
+                <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-amber-800">Quote is being generated, try again in a moment.</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                    onClick={() => handleDownloadPdf(order, 'quote')}
+                    disabled={pdfLoading.quote === getLeadId(order)}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                {isOrderPlacedOnly(displayOrder.status) && (
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={() => handleDownloadPdf(order, 'quote')}
+                    disabled={pdfLoading.quote === getLeadId(order)}
+                  >
+                    <Download className="w-4 h-4" />
+                    {pdfLoading.quote === getLeadId(order) ? 'Downloading…' : 'Download Quote'}
+                  </Button>
+                )}
+                {isOrderAcceptedOrLater(displayOrder.status) && !isDeliveryStage(displayOrder.status) && (
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={() => handleDownloadPdf(order, 'sales-order')}
+                    disabled={pdfLoading.salesOrder === getLeadId(order)}
+                  >
+                    <Download className="w-4 h-4" />
+                    {pdfLoading.salesOrder === getLeadId(order) ? 'Downloading…' : 'Sales Order (PDF)'}
+                  </Button>
+                )}
+                {isDeliveryStage(displayOrder.status) && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2"
+                      onClick={() => handleDownloadPdf(order, 'invoice')}
+                      disabled={pdfLoading.invoice === getLeadId(order)}
+                    >
+                      <Download className="w-4 h-4" />
+                      {pdfLoading.invoice === getLeadId(order) ? 'Downloading…' : 'Invoice (PDF)'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2"
+                      onClick={() => handleDownloadPdf(order, 'ewaybill')}
+                      disabled={pdfLoading.ewaybill === getLeadId(order)}
+                    >
+                      <Download className="w-4 h-4" />
+                      {pdfLoading.ewaybill === getLeadId(order) ? 'Downloading…' : 'E-way bill (PDF)'}
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

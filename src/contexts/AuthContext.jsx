@@ -4,7 +4,8 @@ import {
   deleteSession, 
   getSession, 
   getUserDetails, 
-  setSession 
+  setSession,
+  setUserDetails
 } from "@/lib/session";
 import { 
   refreshToken, 
@@ -188,26 +189,46 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register function
-  const register = async (userData) => {
+  // Register function. Customer with requiresVerification: no tokens, no auth state, show verify step. Non-customer: store tokens and navigate.
+  const register = async (userData, options = {}) => {
     try {
       const response = await registerUser(userData);
       
       if (response) {
+        // Customer signup with requiresVerification: do not store tokens or set auth; show verification step
+        if (response.requiresVerification && !response.accessToken) {
+          return response;
+        }
+        // Non-customer or tokens present: log in and optionally navigate
         setIsAuthenticated(true);
         setUser(response.user);
         setRole(response.user?.role || "customer");
-        
-        // Redirect to intended page or home
-        const redirectUrl = new URLSearchParams(location.search).get('redirectUrl');
-        navigate(redirectUrl || '/');
-        
+        if (!options.skipNavigate) {
+          const redirectUrl = new URLSearchParams(location.search).get('redirectUrl');
+          navigate(redirectUrl || '/');
+        }
         return response;
       }
     } catch (error) {
       console.error("Registration failed:", error);
       throw error;
     }
+  };
+
+  // After email verify or OTP verify: store tokens and user, set auth, redirect to home.
+  // Defer navigate so React commits auth state before route change (avoids blank page).
+  const completeVerification = (data) => {
+    if (data?.accessToken && data?.refreshToken) {
+      setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+    }
+    if (data?.user) {
+      setUserDetails(data.user);
+      setUser(data.user);
+      setRole(data.user?.role || 'customer');
+    }
+    setIsAuthenticated(true);
+    // Short delay so auth state commits and success UI is visible before redirect
+    setTimeout(() => navigate('/'), 150);
   };
 
   // Logout function
@@ -245,6 +266,7 @@ export const AuthProvider = ({ children }) => {
     apiRequest,
     login,
     register,
+    completeVerification,
     logout,
     forgotPassword,
   };

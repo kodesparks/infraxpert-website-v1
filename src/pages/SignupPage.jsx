@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, Building, IdCard } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 
 const SignupPage = () => {
@@ -71,16 +72,25 @@ const SignupPage = () => {
         pincode: formData.pincode
       }
       
-      await register(userData)
-      // Navigation is handled by the register function in AuthContext
-    } catch (error) {
-      // Handle backend validation errors
-      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-        const errorMessages = error.response.data.errors.map(err => err.msg).join(', ')
-        setError(errorMessages)
-      } else {
-        setError(error.response?.data?.message || 'Registration failed. Please try again.')
+      const response = await register(userData, { skipNavigate: true })
+      if (response?.requiresVerification && !response?.accessToken) {
+        navigate('/verify-email', { state: { email: response.user?.email } })
+      } else if (response?.accessToken) {
+        navigate('/')
       }
+    } catch (err) {
+      const data = err.response?.data
+      const message = data?.code === 'EMAIL_EXISTS'
+        ? (data?.message || 'Email already registered.')
+        : data?.code === 'PHONE_EXISTS'
+          ? (data?.message || 'Phone number already registered.')
+          : data?.code === 'BOTH_EXIST'
+            ? (data?.message || 'Email and phone already registered.')
+            : data?.errors && Array.isArray(data.errors)
+              ? data.errors.map(e => e.msg).join(', ')
+              : (data?.message || 'Registration failed. Please try again.')
+      toast.error(message)
+      setError('')
       setIsLoading(false)
     }
   }
@@ -114,6 +124,7 @@ const SignupPage = () => {
           </CardHeader>
           
           <CardContent>
+            <>
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-600 text-sm">{error}</p>
@@ -362,6 +373,7 @@ const SignupPage = () => {
                 </Link>
               </p>
             </div>
+            </>
           </CardContent>
         </Card>
 

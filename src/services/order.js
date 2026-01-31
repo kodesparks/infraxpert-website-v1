@@ -67,19 +67,9 @@ export const getCartItems = async () => {
   }
 }
 
+// Cart = pending orders. No separate cart-summary API; use GET customer orders with status=pending.
 export const getCartSummary = async () => {
-  try {
-    const response = await apiRequest({
-      url: URLS.getCartSummary,
-      method: 'get',
-      setAuthznHeader: true,
-      sessionSource: "cookie"
-    })
-    return response.data
-  } catch (error) {
-    console.error('Error fetching cart summary:', error)
-    throw error
-  }
+  return getCustomerOrders({ status: 'pending' })
 }
 
 export const clearCart = async () => {
@@ -112,16 +102,22 @@ export const getOrderDetails = async (leadId) => {
   }
 }
 
+// Update order. API doc: optional deliveryAddress, deliveryPincode, deliveryExpectedDate, receiverMobileNum.
+// If your backend supports cart quantity updates via PUT, pass items in updateData (e.g. [{ itemCode, qty }]).
 export const updateOrder = async (leadId, updateData) => {
   try {
+    const payload = {}
+    if (updateData.deliveryAddress != null) payload.deliveryAddress = updateData.deliveryAddress
+    if (updateData.deliveryPincode != null) payload.deliveryPincode = updateData.deliveryPincode
+    if (updateData.deliveryExpectedDate != null) payload.deliveryExpectedDate = updateData.deliveryExpectedDate
+    if (updateData.receiverMobileNum != null) payload.receiverMobileNum = updateData.receiverMobileNum
+    if (updateData.items != null && Array.isArray(updateData.items)) payload.items = updateData.items
     const response = await apiRequest({
       url: URLS.updateOrder(leadId),
       method: 'put',
       setAuthznHeader: true,
       sessionSource: "cookie",
-      data: {
-        items: updateData.items || []
-      }
+      data: payload
     })
     return response.data
   } catch (error) {
@@ -521,26 +517,32 @@ export const PAYMENT_MODES = {
   'cash_on_delivery': 'Cash on Delivery'
 }
 
-// Order Change APIs
-export const checkChangeEligibility = async (leadId) => {
+// Order change history (and eligibility if backend returns it). GET /api/order/customer/orders/:leadId/change-history
+export const getOrderChangeHistory = async (leadId) => {
   try {
     const response = await apiRequest({
-      url: `${URLS.getCustomerOrders}/${leadId}/change-history`,
+      url: URLS.getOrderChangeHistory(leadId),
       method: 'get',
       setAuthznHeader: true,
       sessionSource: "cookie"
     })
     return response.data
   } catch (error) {
-    console.error('Error checking change eligibility:', error)
+    console.error('Error fetching order change history:', error)
     throw error
   }
 }
 
+// Alias for UI: backend may return eligibility + history from change-history endpoint
+export const checkChangeEligibility = async (leadId) => {
+  return getOrderChangeHistory(leadId)
+}
+
+// PUT /api/order/customer/orders/:leadId/address. Body: newAddress, optional reason
 export const changeDeliveryAddress = async (leadId, addressData) => {
   try {
     const response = await apiRequest({
-      url: `${URLS.getCustomerOrders}/${leadId}/address`,
+      url: URLS.changeAddress(leadId),
       method: 'put',
       setAuthznHeader: true,
       sessionSource: "cookie",
@@ -556,10 +558,11 @@ export const changeDeliveryAddress = async (leadId, addressData) => {
   }
 }
 
+// PUT /api/order/customer/orders/:leadId/delivery-date. Body: newDeliveryDate, optional reason
 export const changeDeliveryDate = async (leadId, dateData) => {
   try {
     const response = await apiRequest({
-      url: `${URLS.getCustomerOrders}/${leadId}/delivery-date`,
+      url: URLS.changeDeliveryDate(leadId),
       method: 'put',
       setAuthznHeader: true,
       sessionSource: "cookie",
@@ -571,6 +574,91 @@ export const changeDeliveryDate = async (leadId, dateData) => {
     return response.data
   } catch (error) {
     console.error('Error changing delivery date:', error)
+    throw error
+  }
+}
+
+// GET /api/order/customer/orders/:leadId/pdf/quote - Quote (Estimate) PDF from Zoho; created after place order (may be 404 while generating)
+export const getQuotePdf = async (leadId) => {
+  try {
+    const response = await apiRequest({
+      url: URLS.getQuotePdf(leadId),
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching Quote PDF:', error)
+    throw error
+  }
+}
+
+// GET /api/order/customer/orders/:leadId/pdf/sales-order - Sales Order PDF (after order accepted in Zoho)
+export const getSalesOrderPdf = async (leadId) => {
+  try {
+    const response = await apiRequest({
+      url: URLS.getSalesOrderPdf(leadId),
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching Sales Order PDF:', error)
+    throw error
+  }
+}
+
+// GET /api/order/customer/orders/:leadId/pdf/po - Purchase Order PDF (optional; only when vendor assigned and PO exists in Zoho)
+export const getPurchaseOrderPdf = async (leadId) => {
+  try {
+    const response = await apiRequest({
+      url: URLS.getPurchaseOrderPdf(leadId),
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching Purchase Order PDF:', error)
+    throw error
+  }
+}
+
+// GET /api/order/customer/orders/:leadId/pdf/invoice - Invoice PDF (from Zoho; available after invoice created at delivery)
+export const getInvoicePdf = async (leadId) => {
+  try {
+    const response = await apiRequest({
+      url: URLS.getInvoicePdf(leadId),
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching Invoice PDF:', error)
+    throw error
+  }
+}
+
+// GET /api/order/customer/orders/:leadId/pdf/ewaybill - E-way bill PDF (at delivery)
+export const getEwaybillPdf = async (leadId) => {
+  try {
+    const response = await apiRequest({
+      url: URLS.getEwaybillPdf(leadId),
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching E-way bill PDF:', error)
     throw error
   }
 }

@@ -9,6 +9,11 @@ export const URLS = {
   logout: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/logout`,
   userDetails: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/user`,
   changePassword: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/change-password`,
+  sendVerifyEmail: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/send-verify-email`,
+  verifyEmail: (token) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/verify-email${token ? `?token=${encodeURIComponent(token)}` : ''}`,
+  verifyEmailPost: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/verify-email`,
+  otpGenerate: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/otp/generate`,
+  otpVerify: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/otp/verify`,
   
   // User profile APIs
   updateProfile: (id) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/${id}`,
@@ -39,9 +44,16 @@ export const URLS = {
   processPayment: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/payment`,
   getPaymentStatus: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/payment`,
   getOrderTracking: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/tracking`,
+  changeAddress: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/address`,
+  changeDeliveryDate: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/delivery-date`,
+  getOrderChangeHistory: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/change-history`,
+  getQuotePdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/quote`,
+  getSalesOrderPdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/sales-order`,
+  getPurchaseOrderPdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/po`,
+  getInvoicePdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/invoice`,
+  getEwaybillPdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/ewaybill`,
   
-  // Cart-specific APIs
-  getCartSummary: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/summary`,
+  // Cart-specific APIs (cart = GET customer/orders?status=pending; no separate summary endpoint)
   clearCart: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/clear`,
   removeSpecificItemFromCart: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/items`,
   

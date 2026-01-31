@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, EyeOff, Phone, Mail, Lock, ArrowLeft } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 
 const LoginPage = () => {
@@ -54,14 +55,13 @@ const LoginPage = () => {
       
       await login(loginData)
       // Navigation is handled by the login function in AuthContext
-    } catch (error) {
-      // Handle backend validation errors
-      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-        const errorMessages = error.response.data.errors.map(err => err.msg).join(', ')
-        setError(errorMessages)
-      } else {
-        setError(error.response?.data?.message || 'Login failed. Please try again.')
-      }
+    } catch (err) {
+      const data = err.response?.data
+      const message = data?.errors && Array.isArray(data.errors)
+        ? data.errors.map(e => e.msg).join(', ')
+        : (data?.message || 'Login failed. Please try again.')
+      toast.error(message)
+      setError('')
       setIsLoading(false)
     }
   }
