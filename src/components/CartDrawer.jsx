@@ -275,7 +275,11 @@ const CartDrawer = ({ isOpen, onClose }) => {
               deliveryAddress: `${formData.deliveryAddress}, ${formData.city}, ${formData.state}`,
               deliveryPincode: formData.pinCode,
               deliveryExpectedDate: formData.preferredDeliveryDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-              receiverMobileNum: formData.phoneNumber
+              receiverMobileNum: formData.phoneNumber,
+              receiverName: formData.fullName,
+              email: formData.email,
+              city: formData.city,
+              state: formData.state
             }
             
             // Place order via API

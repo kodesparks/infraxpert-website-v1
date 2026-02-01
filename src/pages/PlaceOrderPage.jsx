@@ -125,7 +125,11 @@ const PlaceOrderPage = () => {
           deliveryAddress: `${formData.deliveryAddress}, ${formData.city}, ${formData.state} - ${formData.pinCode}`,
           deliveryPincode: formData.pinCode,
           deliveryExpectedDate: formData.preferredDeliveryDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          receiverMobileNum: formData.phoneNumber
+          receiverMobileNum: formData.phoneNumber,
+          receiverName: formData.fullName,
+          email: formData.email,
+          city: formData.city,
+          state: formData.state
         }
 
         // Call placeOrder API

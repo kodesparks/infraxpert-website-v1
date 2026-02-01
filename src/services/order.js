@@ -162,17 +162,22 @@ export const removeSpecificItemFromCart = async (leadId, itemCode) => {
 
 export const placeOrder = async (leadId, orderData) => {
   try {
+    const payload = {
+      deliveryAddress: orderData.deliveryAddress,
+      deliveryPincode: orderData.deliveryPincode,
+      deliveryExpectedDate: orderData.deliveryExpectedDate,
+      receiverMobileNum: orderData.receiverMobileNum
+    }
+    if (orderData.receiverName != null && orderData.receiverName !== '') payload.receiverName = orderData.receiverName
+    if (orderData.email != null && orderData.email !== '') payload.email = orderData.email
+    if (orderData.city != null && orderData.city !== '') payload.city = orderData.city
+    if (orderData.state != null && orderData.state !== '') payload.state = orderData.state
     const response = await apiRequest({
       url: URLS.placeOrder(leadId),
       method: 'post',
       setAuthznHeader: true,
       sessionSource: "cookie",
-      data: {
-        deliveryAddress: orderData.deliveryAddress,
-        deliveryPincode: orderData.deliveryPincode,
-        deliveryExpectedDate: orderData.deliveryExpectedDate,
-        receiverMobileNum: orderData.receiverMobileNum
-      }
+      data: payload
     })
     return response.data
   } catch (error) {
