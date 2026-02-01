@@ -55,8 +55,8 @@ const ProductsPage = () => {
       
       if (response && response.order) {
         console.log('✅ Item added to cart successfully:', response.order)
-        // Trigger cart drawer to open by dispatching a custom event
         window.dispatchEvent(new CustomEvent('openCartDrawer'))
+        setTimeout(() => window.dispatchEvent(new CustomEvent('refreshCartDrawer')), 150)
       }
     } catch (error) {
       console.error('❌ Error adding item to cart:', error)

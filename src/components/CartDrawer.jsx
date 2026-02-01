@@ -31,12 +31,25 @@ const CartDrawer = ({ isOpen, onClose }) => {
   })
   const [errors, setErrors] = useState({})
 
-  // Fetch cart items when drawer opens
+  // Fetch cart items when drawer opens, and refetch shortly after so newly added items show immediately
   useEffect(() => {
     if (isOpen) {
       console.log('🛒 Cart drawer opened, fetching cart items...')
       fetchCartItems()
+      const refetchTimer = setTimeout(() => {
+        fetchCartItems()
+      }, 400)
+      return () => clearTimeout(refetchTimer)
     }
+  }, [isOpen])
+
+  // Listen for refresh event (e.g. after Add to Cart from product page) so cart updates without manual refresh
+  useEffect(() => {
+    const handleRefreshCart = () => {
+      if (isOpen) fetchCartItems()
+    }
+    window.addEventListener('refreshCartDrawer', handleRefreshCart)
+    return () => window.removeEventListener('refreshCartDrawer', handleRefreshCart)
   }, [isOpen])
 
   // Update pincode when userPincode changes
