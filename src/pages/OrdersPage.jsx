@@ -180,13 +180,17 @@ const OrdersPage = () => {
     return trackableStatuses.includes(status)
   }
 
-  // Load detailed order information
+  // Load detailed order information (order + deliveryInfo + paymentInfo from API)
   const loadOrderDetails = async (orderId) => {
     setIsLoadingDetails(true)
     try {
       const response = await orderService.getOrderDetails(orderId)
       if (response && response.order) {
-        setOrderDetails(response.order)
+        setOrderDetails({
+          ...response.order,
+          deliveryInfo: response.deliveryInfo ?? null,
+          paymentInfo: response.paymentInfo ?? null
+        })
       }
     } catch (error) {
       console.error('Error loading order details:', error)
@@ -961,40 +965,40 @@ const OrdersPage = () => {
               </div>
             </div>
 
-            {/* Delivery Tracking (Customer-visible subset) */}
-            {(displayOrder.delivery || orderDetails?.delivery) && (
+            {/* Delivery Tracking – driver, truck, etc. from API deliveryInfo */}
+            {(displayOrder.deliveryInfo || displayOrder.delivery || orderDetails?.delivery) && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Tracking</h3>
                 {(() => {
-                  const d = displayOrder.delivery || orderDetails?.delivery || {}
+                  const d = displayOrder.deliveryInfo || displayOrder.delivery || orderDetails?.delivery || {}
                   return (
                     <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        {d.truckNumber && (
-                          <p className="text-sm text-gray-700"><span className="text-gray-500">Truck:</span> {d.truckNumber}</p>
-                        )}
-                        {d.vehicleType && (
-                          <p className="text-sm text-gray-700"><span className="text-gray-500">Vehicle:</span> {d.vehicleType}</p>
-                        )}
+                      <div className="space-y-2">
                         {d.driverName && (
-                          <p className="text-sm text-gray-700"><span className="text-gray-500">Driver:</span> {d.driverName}</p>
+                          <p className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Driver:</span> {d.driverName}</p>
                         )}
                         {d.driverPhone && (
-                          <p className="text-sm text-gray-700"><span className="text-gray-500">Phone:</span> {d.driverPhone}</p>
+                          <p className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Driver Phone:</span> {d.driverPhone}</p>
+                        )}
+                        {d.truckNumber && (
+                          <p className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Truck Number:</span> {d.truckNumber}</p>
+                        )}
+                        {d.vehicleType && (
+                          <p className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Vehicle Type:</span> {d.vehicleType}</p>
                         )}
                       </div>
-                      <div className="space-y-1">
-                        {d.estimatedArrival && (
-                          <p className="text-sm text-gray-700"><span className="text-gray-500">ETA:</span> {formatDate(d.estimatedArrival)}</p>
-                        )}
-                        {d.lastLocation?.address && (
-                          <p className="text-sm text-gray-700"><span className="text-gray-500">Last Location:</span> {d.lastLocation.address}</p>
+                      <div className="space-y-2">
+                        {(d.expectedDeliveryDate || d.estimatedArrival) && (
+                          <p className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Expected Delivery:</span> {formatDate(d.expectedDeliveryDate || d.estimatedArrival)}</p>
                         )}
                         {d.deliveryStatus && (
-                          <p className="text-sm text-gray-700"><span className="text-gray-500">Status:</span> {d.deliveryStatus}</p>
+                          <p className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Delivery Status:</span> {String(d.deliveryStatus).replace(/_/g, ' ')}</p>
+                        )}
+                        {d.lastLocation?.address && (
+                          <p className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Last Location:</span> {d.lastLocation.address}</p>
                         )}
                         {d.deliveryNotes && (
-                          <p className="text-sm text-gray-700"><span className="text-gray-500">Notes:</span> {d.deliveryNotes}</p>
+                          <p className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Notes:</span> {d.deliveryNotes}</p>
                         )}
                       </div>
                     </div>
@@ -1003,35 +1007,39 @@ const OrdersPage = () => {
               </div>
             )}
 
-            {/* Payment & Total - price hidden for now */}
+            {/* Payment Summary – from API paymentInfo when available */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h3>
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                {/* Total Amount price hidden
-                <div className="flex justify-between border-b pb-2">
-                  <span className="font-semibold text-gray-900">Total Amount:</span>
-                  <span className="font-semibold text-gray-900">
-                    ₹{(displayOrder.finalAmount || displayOrder.totalAmount || displayOrder.grandTotal || 0).toLocaleString()}
-                  </span>
-                </div>
-                */}
-                {(displayOrder.paymentMethod || displayOrder.paymentType) && (
+                {(displayOrder.paymentInfo?.paymentMethod ?? displayOrder.paymentMethod ?? displayOrder.paymentType) && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Method:</span>
                     <span className="font-medium capitalize">
-                      {displayOrder.paymentMethod || displayOrder.paymentType}
+                      {displayOrder.paymentInfo?.paymentMode ?? displayOrder.paymentInfo?.paymentMethod ?? displayOrder.paymentMethod ?? displayOrder.paymentType}
                     </span>
                   </div>
                 )}
-                {displayOrder.paymentStatus && (
+                {(displayOrder.paymentInfo?.paymentStatus != null || displayOrder.paymentStatus) && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Status:</span>
                     <span className={`font-medium ${
-                      displayOrder.paymentStatus === 'completed' ? 'text-green-600' : 
-                      displayOrder.paymentStatus === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                      (displayOrder.paymentInfo?.paymentStatus ?? displayOrder.paymentStatus) === 'completed' ? 'text-green-600' : 
+                      (displayOrder.paymentInfo?.paymentStatus ?? displayOrder.paymentStatus) === 'pending' ? 'text-yellow-600' : 'text-red-600'
                     }`}>
-                      {displayOrder.paymentStatus}
+                      {String(displayOrder.paymentInfo?.paymentStatus ?? displayOrder.paymentStatus ?? '—').replace(/_/g, ' ')}
                     </span>
+                  </div>
+                )}
+                {displayOrder.paymentInfo?.utrNum && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">UTR Number:</span>
+                    <span className="font-medium">{displayOrder.paymentInfo.utrNum}</span>
+                  </div>
+                )}
+                {displayOrder.paymentInfo?.transactionId && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Transaction ID:</span>
+                    <span className="font-medium">{displayOrder.paymentInfo.transactionId}</span>
                   </div>
                 )}
               </div>
@@ -1102,56 +1110,60 @@ const OrdersPage = () => {
               </div>
             </div>
 
-            {/* Change Functionality */}
-            {changeEligibility && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Modifications</h3>
-                
-                {/* Countdown Timer */}
-                <CountdownTimer 
-                  orderPlacedAt={changeEligibility.order?.orderPlacedAt} 
-                  timeWindowHours={48}
-                />
-
-                {/* Change Buttons */}
-                {changeEligibility.order?.canMakeChanges && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <Button
-                      onClick={() => setShowAddressModal(true)}
-                      variant="outline"
-                      className="flex items-center justify-center space-x-2 p-4 h-auto"
-                    >
-                      <MapPin className="w-4 h-4" />
-                      <div className="text-left">
-                        <div className="font-medium">Change Address</div>
-                        <div className="text-xs text-gray-500">Update delivery location</div>
-                      </div>
-                    </Button>
-                    
-                    <Button
-                      onClick={() => setShowDateModal(true)}
-                      variant="outline"
-                      className="flex items-center justify-center space-x-2 p-4 h-auto"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <div className="text-left">
-                        <div className="font-medium">Change Delivery Date</div>
-                        <div className="text-xs text-gray-500">Update preferred date</div>
-                      </div>
-                    </Button>
-                  </div>
-                )}
-
-                {/* Change History */}
+            {/* Change Functionality – hidden once truck_loading or later (can't change delivery date) */}
+            {changeEligibility && (() => {
+              const orderStatus = displayOrder.orderStatus ?? displayOrder.status
+              const noLongerAllowChanges = [
+                ORDER_STATUS.TRUCK_LOADING,
+                ORDER_STATUS.SHIPPED,
+                ORDER_STATUS.IN_TRANSIT,
+                ORDER_STATUS.OUT_FOR_DELIVERY,
+                ORDER_STATUS.DELIVERED
+              ].includes(orderStatus)
+              if (noLongerAllowChanges) return null
+              return (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Change History</h4>
-                  <ChangeHistory 
-                    addressChanges={changeEligibility.order?.addressChangeHistory || []}
-                    deliveryDateChanges={changeEligibility.order?.deliveryDateChangeHistory || []}
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Modifications</h3>
+                  <CountdownTimer 
+                    orderPlacedAt={changeEligibility.order?.orderPlacedAt} 
+                    timeWindowHours={48}
                   />
+                  {changeEligibility.order?.canMakeChanges && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <Button
+                        onClick={() => setShowAddressModal(true)}
+                        variant="outline"
+                        className="flex items-center justify-center space-x-2 p-4 h-auto"
+                      >
+                        <MapPin className="w-4 h-4" />
+                        <div className="text-left">
+                          <div className="font-medium">Change Address</div>
+                          <div className="text-xs text-gray-500">Update delivery location</div>
+                        </div>
+                      </Button>
+                      <Button
+                        onClick={() => setShowDateModal(true)}
+                        variant="outline"
+                        className="flex items-center justify-center space-x-2 p-4 h-auto"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <div className="text-left">
+                          <div className="font-medium">Change Delivery Date</div>
+                          <div className="text-xs text-gray-500">Update preferred date</div>
+                        </div>
+                      </Button>
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Change History</h4>
+                    <ChangeHistory 
+                      addressChanges={changeEligibility.order?.addressChangeHistory || []}
+                      deliveryDateChanges={changeEligibility.order?.deliveryDateChangeHistory || []}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
           </div>
         </div>
       </div>
