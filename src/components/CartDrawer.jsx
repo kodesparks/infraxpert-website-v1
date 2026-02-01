@@ -406,6 +406,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
                         {item.name}
                       </h3>
                       <p className="text-xs text-gray-600 mb-1">{item.brand}</p>
+                      {/* Price hidden for now
                       <p className="text-sm font-bold text-gray-800">
                         ₹{(item.totalPrice || item.currentPrice).toLocaleString()}{item.unit}
                       </p>
@@ -417,6 +418,10 @@ const CartDrawer = ({ isOpen, onClose }) => {
                         <p className="text-xs text-green-600 font-medium">
                           Free Delivery
                         </p>
+                      )}
+                      */}
+                      {item.deliveryCharges <= 0 && (
+                        <p className="text-xs text-green-600 font-medium">Free Delivery</p>
                       )}
                     </div>
 
@@ -658,13 +663,14 @@ const CartDrawer = ({ isOpen, onClose }) => {
         {/* Footer */}
         {currentStep === 'cart' && cartItems.length > 0 && (
           <div className="border-t border-gray-200 p-6 space-y-4">
-            {/* Total */}
+            {/* Total - price hidden for now
             <div className="flex justify-between items-center">
               <span className="text-lg font-bold text-gray-800">Total:</span>
               <span className="text-xl font-bold text-gray-800">
                 ₹{getTotalPrice().toLocaleString()}
               </span>
             </div>
+            */}
 
             {/* Action Buttons */}
             <div className="space-y-3">

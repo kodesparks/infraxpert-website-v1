@@ -180,7 +180,7 @@
         id: 'rtgs',
         name: 'RTGS Transfer',
         icon: Building2,
-        description: 'Real Time Gross Settlement (₹2 lakhs+)'
+        description: 'Real Time Gross Settlement (large amounts)'
       },
       {
         id: 'neft',
@@ -623,12 +623,19 @@
                     <div className="space-y-4">
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <h3 className="font-semibold text-blue-800 mb-2">Bank Transfer Details</h3>
-                        <p className="text-sm text-blue-700">
+                        <p className="text-sm text-blue-700 mb-4">
                           {selectedPaymentMethod === 'rtgs' 
-                            ? 'RTGS is available for amounts ₹2 lakhs and above. Transfer will be processed in real-time.'
+                            ? 'RTGS is available for large transfers. Transfer will be processed in real-time.'
                             : 'NEFT transfers are processed in batches throughout the day.'
                           }
                         </p>
+                        <div className="bg-white p-4 rounded-lg border border-blue-200 space-y-2">
+                          <p className="text-sm font-semibold text-gray-700">Transfer to:</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Name:</span> INFRAXPERT SOLUTIONS LLP</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Account Number:</span> 925020028741798</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">IFSC Code:</span> UTIB0001158</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Branch:</span> LAKSHMIPURAM, GUNTUR</p>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -721,8 +728,8 @@
                     <div className="space-y-4">
                       <div className="bg-yellow-50 p-4 rounded-lg">
                         <h3 className="font-semibold text-yellow-800 mb-2">Cheque Payment</h3>
-                        <p className="text-sm text-yellow-700">
-                          Please ensure the cheque is drawn in favor of our company name. 
+                        <p className="text-sm text-yellow-700 mb-2">
+                          Please draw the cheque in favor of <span className="font-semibold">INFRAXPERT SOLUTIONS LLP</span>. 
                           Order will be processed only after cheque clearance.
                         </p>
                       </div>
@@ -815,11 +822,10 @@
                         <h3 className="font-semibold text-blue-800 mb-3 text-lg">Bank Transfer Details</h3>
                         <div className="bg-white p-4 rounded-lg mb-4 space-y-2">
                           <p className="text-sm font-semibold text-gray-700">Bank Account Details:</p>
-                          <p className="text-sm text-gray-600"><span className="font-medium">Account Name:</span> InfraXpert Solutions</p>
-                          <p className="text-sm text-gray-600"><span className="font-medium">Account Number:</span> 123456789012</p>
-                          <p className="text-sm text-gray-600"><span className="font-medium">IFSC Code:</span> SBIN0001234</p>
-                          <p className="text-sm text-gray-600"><span className="font-medium">Bank Name:</span> State Bank of India</p>
-                          <p className="text-sm text-gray-600"><span className="font-medium">Branch:</span> Gurugram Main Branch</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Name:</span> INFRAXPERT SOLUTIONS LLP</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Account Number:</span> 925020028741798</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">IFSC Code:</span> UTIB0001158</p>
+                          <p className="text-sm text-gray-600"><span className="font-medium">Branch:</span> LAKSHMIPURAM, GUNTUR</p>
                         </div>
                         <p className="text-sm text-blue-700 font-medium">
                           After transferring the amount, enter the UTR number below. Your order will be processed after verification.
@@ -933,13 +939,16 @@
                         <p className="font-medium text-gray-800">{item.name}</p>
                         <p className="text-sm text-gray-600">x {item.quantity}</p>
                       </div>
+                      {/* Price hidden for now
                       <p className="font-semibold text-gray-800">
                         ₹{((item.currentPrice || item.price || 0) * (item.quantity || 1)).toLocaleString()}
                       </p>
+                      */}
                     </div>
                   ))}
                 </div>
 
+                {/* Total price hidden for now
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-bold text-gray-800">Total Amount:</span>
@@ -948,6 +957,7 @@
                     </span>
                   </div>
                 </div>
+                */}
 
                 <Button
                   onClick={handlePayment}

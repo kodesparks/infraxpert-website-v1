@@ -194,9 +194,11 @@ const OrderTrackingPage = () => {
               <h1 className="text-2xl font-bold text-gray-800 mb-1">
                 {tracking.order?.formattedLeadId || `Order #${leadId}`}
               </h1>
+              {/* Price hidden for now
               <p className="text-gray-600">
                 Order Total: ₹{(tracking.order?.totalAmount || 0).toLocaleString()}
               </p>
+              */}
             </div>
             {tracking.canCancel && (
               <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
@@ -472,6 +474,7 @@ const OrderTrackingPage = () => {
                     {tracking.payment.paymentStatus}
                   </p>
                 </div>
+                {/* Price hidden for now
                 {tracking.payment.paidAmount !== undefined && (
                   <div>
                     <p className="text-sm text-gray-600">Paid Amount</p>
@@ -480,6 +483,7 @@ const OrderTrackingPage = () => {
                     </p>
                   </div>
                 )}
+                */}
               </div>
             </Card>
           )}

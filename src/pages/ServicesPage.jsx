@@ -112,7 +112,7 @@ const ServicesPage = () => {
                 </div>
                 <div>
                   <CardTitle className="text-xl">{service.title}</CardTitle>
-                  <div className="text-sm font-semibold text-blue-600">{service.price}</div>
+                  {/* Price hidden: <div className="text-sm font-semibold text-blue-600">{service.price}</div> */}
                 </div>
               </div>
             </CardHeader>

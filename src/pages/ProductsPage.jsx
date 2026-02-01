@@ -768,8 +768,8 @@ const ProductsPage = () => {
                     disabled={loading}
                     className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-700 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
+                  <option value="price-low">Sort: Low to High</option>
+                  <option value="price-high">Sort: High to Low</option>
                   <option value="newest">Newest</option>
                 </select>
                 </div>
@@ -856,14 +856,14 @@ const ProductsPage = () => {
                       </>
                     )}
                     
-                    {/* Discount Badge */}
-                    {product.basePrice > product.currentPrice && product.basePrice > 0 && product.discount > 0 && (
+                    {/* Discount Badge - hidden (pricing hidden) */}
+                    {/* {product.basePrice > product.currentPrice && product.basePrice > 0 && product.discount > 0 && (
                     <div className="absolute top-2 sm:top-3 lg:top-4 left-2 sm:left-3 lg:left-4">
                       <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                         {product.discount}% OFF
                       </span>
                     </div>
-                    )}
+                    )} */}
                     
                     {/* Wishlist Icon */}
                     <div className="absolute top-2 sm:top-3 lg:top-4 right-2 sm:right-3 lg:right-4">
@@ -918,32 +918,16 @@ const ProductsPage = () => {
                       ))}
                     </div>
 
-                    {/* Pricing */}
+                    {/* Pricing - hidden (pricing hidden globally) */}
                     <div className="mb-3">
                       {userPincode ? (
                         <div className="space-y-2">
-                          {/* Base Price with Discount Display */}
-                          <div className="flex items-center justify-between">
+                          {/* Base Price - hidden */}
+                          {/* <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-500">Base Price:</span>
-                            <div className="flex items-center gap-2">
-                              {product.basePrice > product.currentPrice && product.basePrice > 0 ? (
-                                <>
-                                  <span className="text-xs text-gray-400 line-through">
-                                    ₹{product.basePrice.toLocaleString()}
-                                  </span>
-                                  <span className="text-xs font-semibold text-green-600">
-                                    ₹{product.currentPrice.toLocaleString()}{product.unit}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-xs text-gray-600">
-                                  ₹{product.currentPrice.toLocaleString()}{product.unit}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Delivery Charge */}
+                            <div className="flex items-center gap-2">...</div>
+                          </div> */}
+                          {/* Delivery status only (no amounts) */}
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-500">Delivery:</span>
                             <span className={`text-xs ${
@@ -957,19 +941,12 @@ const ProductsPage = () => {
                                 ? 'Not Available' 
                                 : product.isFreeDelivery 
                                   ? 'FREE' 
-                                  : `₹${product.deliveryCharge.toLocaleString()}`
+                                  : 'Charges apply'
                               }
                             </span>
                           </div>
-                          
-                          {/* Total Price */}
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <span className="text-sm font-semibold text-gray-800">Total:</span>
-                            <span className="text-sm font-bold text-blue-600">
-                              ₹{product.totalPrice.toLocaleString()}{product.unit}
-                            </span>
-                          </div>
-                          
+                          {/* Total - hidden */}
+                          {/* <div className="flex items-center justify-between pt-2 border-t border-gray-100">...</div> */}
                           {/* Delivery Reason if not available */}
                           {!product.isDeliveryAvailable && product.deliveryReason && (
                             <div className="text-red-600 text-xs mt-1 text-center">
@@ -979,27 +956,7 @@ const ProductsPage = () => {
                         </div>
                       ) : (
                         <div>
-                          <div className="flex items-center gap-2">
-                            {product.basePrice > product.currentPrice && product.basePrice > 0 ? (
-                              <>
-                                <span className="text-xs text-gray-400 line-through">
-                                  ₹{product.basePrice.toLocaleString()}
-                                </span>
-                                <span className="text-sm font-bold text-green-600">
-                                  ₹{product.currentPrice.toLocaleString()}{product.unit}
-                                </span>
-                              </>
-                            ) : (
-                              <span className="text-sm font-bold text-gray-800">
-                                ₹{product.currentPrice.toLocaleString()}{product.unit}
-                              </span>
-                            )}
-                          </div>
-                          {product.discount > 0 && (
-                            <div className="text-xs text-green-600 font-medium mt-1">
-                              {product.discount}% OFF
-                            </div>
-                          )}
+                          <div className="text-xs text-gray-500">—</div>
                           <div className="text-xs text-gray-500 mt-1">
                             + Delivery charges
                           </div>

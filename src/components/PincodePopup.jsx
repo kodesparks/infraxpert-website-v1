@@ -125,7 +125,7 @@ const PincodePopup = ({ isOpen, onClose, onPincodeSubmit, currentPincode }) => {
                 <div>
                   <h4 className="text-sm font-medium text-green-900">Free Delivery</h4>
                   <p className="text-xs text-green-700">
-                    Free delivery for orders above ₹10,000 within 50km
+                    Free delivery within 50km
                   </p>
                 </div>
               </div>
@@ -153,7 +153,7 @@ const PincodePopup = ({ isOpen, onClose, onPincodeSubmit, currentPincode }) => {
                   <span>Calculating...</span>
                 </div>
               ) : (
-                'Calculate Price'
+                'Check delivery'
               )}
             </Button>
           </div>

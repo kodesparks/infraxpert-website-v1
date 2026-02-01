@@ -377,13 +377,16 @@ const PlaceOrderPage = () => {
                     <p className="font-medium text-gray-800">{item.name}</p>
                     <p className="text-sm text-gray-600">x {item.quantity}</p>
                   </div>
+                  {/* Price hidden for now
                   <p className="font-semibold text-gray-800">
                     ₹{(item.currentPrice * item.quantity).toLocaleString()}
                   </p>
+                  */}
                 </div>
               ))}
             </div>
 
+            {/* Total price hidden for now
             <div className="border-t border-gray-200 pt-4 mt-4">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold text-gray-800">Total Amount:</span>
@@ -392,6 +395,7 @@ const PlaceOrderPage = () => {
                 </span>
               </div>
             </div>
+            */}
           </div>
 
           {/* Submit Button */}

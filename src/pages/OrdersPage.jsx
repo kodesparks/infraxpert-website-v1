@@ -700,9 +700,11 @@ const OrdersPage = () => {
                   <p className="text-xs font-medium text-gray-900 truncate">{item.name}</p>
                   <p className="text-xs text-gray-500">Qty: {item.quantity || 1}</p>
                 </div>
+                {/* Price hidden for now
                 <p className="text-xs font-semibold text-gray-900">
                   ₹{((item.currentPrice || item.price || 0) * (item.quantity || 1)).toLocaleString()}
                 </p>
+                */}
               </div>
             ))}
             {(order.items || []).length > 1 && (
@@ -713,13 +715,14 @@ const OrdersPage = () => {
           </div>
         </div>
 
-        {/* Order Summary */}
+        {/* Order Summary - price hidden for now
         <div className="bg-gray-50 rounded p-2 mb-3">
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">Total</span>
             <span className="text-sm font-bold text-gray-900">₹{(order.finalAmount || 0).toLocaleString()}</span>
           </div>
         </div>
+        */}
 
         {/* Actions */}
         <div className="flex items-center justify-between gap-2">
@@ -868,12 +871,14 @@ const OrdersPage = () => {
                         )}
                       </div>
                       <div className="text-right">
+                        {/* Price hidden for now
                         <p className="font-semibold text-gray-900">
                           ₹{totalCost.toLocaleString()}
                         </p>
                         {item.unitPrice && (
                           <p className="text-xs text-gray-500">₹{item.unitPrice.toLocaleString()} each</p>
                         )}
+                        */}
                       </div>
                     </div>
                   )
@@ -998,16 +1003,18 @@ const OrdersPage = () => {
               </div>
             )}
 
-            {/* Payment & Total */}
+            {/* Payment & Total - price hidden for now */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h3>
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                {/* Total Amount price hidden
                 <div className="flex justify-between border-b pb-2">
                   <span className="font-semibold text-gray-900">Total Amount:</span>
                   <span className="font-semibold text-gray-900">
                     ₹{(displayOrder.finalAmount || displayOrder.totalAmount || displayOrder.grandTotal || 0).toLocaleString()}
                   </span>
                 </div>
+                */}
                 {(displayOrder.paymentMethod || displayOrder.paymentType) && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Method:</span>
