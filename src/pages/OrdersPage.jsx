@@ -33,6 +33,7 @@ import { useOrders, ORDER_STATUS, ORDER_STATUS_INFO } from '@/contexts/OrdersCon
 import * as orderService from '@/services/order'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { toast } from 'sonner'
 import AddressChangeModal from '@/components/AddressChangeModal'
 import DeliveryDateChangeModal from '@/components/DeliveryDateChangeModal'
 import ChangeHistory from '@/components/ChangeHistory'
@@ -67,18 +68,16 @@ const OrdersPage = () => {
   const [changeEligibility, setChangeEligibility] = useState(null)
   const [isLoadingEligibility, setIsLoadingEligibility] = useState(false)
   const [pdfLoading, setPdfLoading] = useState({ quote: null, salesOrder: null, invoice: null, ewaybill: null })
-  const [quoteGeneratingForLeadId, setQuoteGeneratingForLeadId] = useState(null)
-
-  // Document flow: 1=Order placed → SMTP "order placed" only, no Zoho quote.
-  // 2=Order accepted (vendor_accepted) → SMTP "order accepted" only, no quote, no SO.
-  // 3=Order confirmed (order_confirmed) → Create Zoho Quote (estimate), email it → show Download Quote.
-  // 4=Payment done (payment_done) → Create Zoho Sales Order, email it → show Download Sales Order.
-  // 5=Out for delivery etc. → Create Invoice, E-Way Bill as before.
+  // Order flow (live): place order → vendor accept → order confirmed (Quote created & emailed) → payment done (SO created & emailed) → later Invoice.
+  // Order response includes zohoQuoteId, zohoSalesOrderId, zohoInvoiceId when set. APIs unchanged; backend tested with npm run test:zoho-flow.
+  // At a time show only one PDF: Quote at Order Accepted; once Sales Order comes, show only Sales Order; at delivery show only Invoice + E-way.
   const isOrderPlacedOnly = (status) => status === ORDER_STATUS.ORDER_PLACED
   const isOrderAcceptedOrLater = (status) => status && status !== ORDER_STATUS.PENDING && status !== ORDER_STATUS.ORDER_PLACED
   const isDeliveryStage = (status) => [ORDER_STATUS.IN_TRANSIT, ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED].includes(status)
-  const isQuoteAvailable = (status) => [ORDER_STATUS.ORDER_CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.TRUCK_LOADING, ORDER_STATUS.SHIPPED, ORDER_STATUS.IN_TRANSIT, ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED].includes(status)
-  const isSalesOrderAvailable = (status) => [ORDER_STATUS.PROCESSING, ORDER_STATUS.ORDER_CONFIRMED, ORDER_STATUS.TRUCK_LOADING, ORDER_STATUS.SHIPPED, ORDER_STATUS.IN_TRANSIT, ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED].includes(status)
+  // Quote only when Order Accepted (vendor_accepted); hide once order_confirmed / payment_done / etc.
+  const isQuoteAvailable = (status) => status === ORDER_STATUS.CONFIRMED
+  // Sales Order only when order confirmed or payment done (not vendor_accepted, not delivery); hide Quote when this shows.
+  const isSalesOrderAvailable = (status) => [ORDER_STATUS.ORDER_CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.TRUCK_LOADING, ORDER_STATUS.SHIPPED].includes(status)
 
   // Load orders on component mount
   useEffect(() => {
@@ -259,7 +258,6 @@ const OrdersPage = () => {
     const keyMap = { quote: 'quote', 'sales-order': 'salesOrder', invoice: 'invoice', ewaybill: 'ewaybill' }
     const key = keyMap[type] || type
     setPdfLoading(prev => ({ ...prev, [key]: leadId }))
-    if (type === 'quote') setQuoteGeneratingForLeadId(prev => (prev === leadId ? null : prev))
     try {
       let blob
       const nameMap = {
@@ -280,8 +278,23 @@ const OrdersPage = () => {
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
-      if (type === 'quote' && err.response?.status === 404) setQuoteGeneratingForLeadId(leadId)
-      else console.error(`Error downloading ${type} PDF:`, err)
+      let message = err.response?.data?.message
+      if (typeof message !== 'string' && err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text()
+          const json = JSON.parse(text)
+          message = json.message
+        } catch (_) {}
+      }
+      if (type === 'quote') {
+        const status = order?.orderStatus ?? order?.status
+        const isOrderPlacedOrPending = status === ORDER_STATUS.ORDER_PLACED || status === ORDER_STATUS.PENDING || status === 'order_placed' || status === 'pending'
+        toast.error(isOrderPlacedOrPending ? 'Quote is generated when the order is confirmed.' : (message || 'Quote not available; try again in a moment.'))
+      } else if (message) {
+        toast.error(message)
+      } else {
+        console.error(`Error downloading ${type} PDF:`, err)
+      }
     } finally {
       setPdfLoading(prev => ({ ...prev, [key]: null }))
     }
@@ -767,8 +780,8 @@ const OrdersPage = () => {
                 Rate
               </Button>
             )}
-            {/* Step 3: Quote after order_confirmed (Zoho Quote created & emailed). Steps 1–2 = email only, no quote/SO. */}
-            {isQuoteAvailable(order.status) && !isDeliveryStage(order.status) && (
+            {/* Order Accepted only: Quote (remove once Sales Order available). */}
+            {isQuoteAvailable(order.status) && (
               <Button
                 size="sm"
                 variant="outline"
@@ -780,8 +793,8 @@ const OrdersPage = () => {
                 {pdfLoading.quote === getLeadId(order) ? '…' : 'Quote'}
               </Button>
             )}
-            {/* Step 4: Sales Order after payment_done (Zoho SO created & emailed). */}
-            {isSalesOrderAvailable(order.status) && !isDeliveryStage(order.status) && (
+            {/* Order confirmed / payment: Sales Order only (no Quote). */}
+            {isSalesOrderAvailable(order.status) && (
               <Button
                 size="sm"
                 variant="outline"
@@ -793,7 +806,7 @@ const OrdersPage = () => {
                 {pdfLoading.salesOrder === getLeadId(order) ? '…' : 'Sales Order'}
               </Button>
             )}
-            {/* Step 5: Out for delivery etc. → Invoice + E-Way Bill. */}
+            {/* Delivery only: Invoice + E-Way (no Quote, no Sales Order). */}
             {isDeliveryStage(order.status) && (
               <>
                 <Button
@@ -1055,26 +1068,12 @@ const OrdersPage = () => {
               </div>
             </div>
 
-            {/* Documents: Step 1–2 = email only (no quote/SO). Step 3 = Quote. Step 4 = Sales Order. Step 5 = Invoice + E-way bill. */}
+            {/* Documents: Show only one PDF at a time. Order Accepted = Quote only; order confirmed/payment = Sales Order only; delivery = Invoice + E-way only. */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
-              {isQuoteAvailable(displayOrder.status) && !isDeliveryStage(displayOrder.status) && quoteGeneratingForLeadId === getLeadId(order) && (
-                <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-amber-800">Quote is being generated, try again in a moment.</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-amber-300 text-amber-800 hover:bg-amber-100"
-                    onClick={() => handleDownloadPdf(order, 'quote')}
-                    disabled={pdfLoading.quote === getLeadId(order)}
-                  >
-                    Retry
-                  </Button>
-                </div>
-              )}
               <div className="flex flex-wrap gap-3">
-                {/* Step 3: Download Quote (Zoho Quote created at order_confirmed) */}
-                {isQuoteAvailable(displayOrder.status) && !isDeliveryStage(displayOrder.status) && (
+                {/* Order Accepted only: Quote */}
+                {isQuoteAvailable(displayOrder.status) && (
                   <Button
                     variant="outline"
                     className="flex items-center gap-2"
@@ -1097,7 +1096,7 @@ const OrdersPage = () => {
                     {pdfLoading.salesOrder === getLeadId(order) ? 'Downloading…' : 'Sales Order (PDF)'}
                   </Button>
                 )}
-                {/* Step 5: Invoice + E-Way Bill (out for delivery etc.) */}
+                {/* Delivery only: Invoice + E-Way */}
                 {isDeliveryStage(displayOrder.status) && (
                   <>
                     <Button

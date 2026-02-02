@@ -87,6 +87,8 @@ export const clearCart = async () => {
   }
 }
 
+// GET order details. Response: { order, deliveryInfo?, paymentInfo?, statusHistory? }.
+// order may include zohoQuoteId, zohoSalesOrderId, zohoInvoiceId when set (flow: place → vendor accept → order confirmed [Quote] → payment done [SO] → later Invoice).
 export const getOrderDetails = async (leadId) => {
   try {
     const response = await apiRequest({
