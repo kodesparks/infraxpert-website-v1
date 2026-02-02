@@ -583,7 +583,7 @@ export const changeDeliveryDate = async (leadId, dateData) => {
   }
 }
 
-// GET /api/order/customer/orders/:leadId/pdf/quote - Quote (Estimate) PDF from Zoho; created after place order (may be 404 while generating)
+// GET .../pdf/quote - Zoho Quote (estimate). Created at step 3 (order_confirmed); emailed then. May 404 while generating.
 export const getQuotePdf = async (leadId) => {
   try {
     const response = await apiRequest({
@@ -600,7 +600,7 @@ export const getQuotePdf = async (leadId) => {
   }
 }
 
-// GET /api/order/customer/orders/:leadId/pdf/sales-order - Sales Order PDF (after order accepted in Zoho)
+// GET .../pdf/sales-order - Zoho Sales Order. Created at step 4 (payment_done); emailed via Zoho Books API.
 export const getSalesOrderPdf = async (leadId) => {
   try {
     const response = await apiRequest({
@@ -634,7 +634,7 @@ export const getPurchaseOrderPdf = async (leadId) => {
   }
 }
 
-// GET /api/order/customer/orders/:leadId/pdf/invoice - Invoice PDF (from Zoho; available after invoice created at delivery)
+// GET .../pdf/invoice - Zoho Invoice. Created at step 5 (out for delivery etc.).
 export const getInvoicePdf = async (leadId) => {
   try {
     const response = await apiRequest({
@@ -651,7 +651,7 @@ export const getInvoicePdf = async (leadId) => {
   }
 }
 
-// GET /api/order/customer/orders/:leadId/pdf/ewaybill - E-way bill PDF (at delivery)
+// GET .../pdf/ewaybill - E-Way Bill. Created at step 5 (out for delivery etc.).
 export const getEwaybillPdf = async (leadId) => {
   try {
     const response = await apiRequest({

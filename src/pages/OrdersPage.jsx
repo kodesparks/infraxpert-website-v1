@@ -69,9 +69,16 @@ const OrdersPage = () => {
   const [pdfLoading, setPdfLoading] = useState({ quote: null, salesOrder: null, invoice: null, ewaybill: null })
   const [quoteGeneratingForLeadId, setQuoteGeneratingForLeadId] = useState(null)
 
+  // Document flow: 1=Order placed → SMTP "order placed" only, no Zoho quote.
+  // 2=Order accepted (vendor_accepted) → SMTP "order accepted" only, no quote, no SO.
+  // 3=Order confirmed (order_confirmed) → Create Zoho Quote (estimate), email it → show Download Quote.
+  // 4=Payment done (payment_done) → Create Zoho Sales Order, email it → show Download Sales Order.
+  // 5=Out for delivery etc. → Create Invoice, E-Way Bill as before.
   const isOrderPlacedOnly = (status) => status === ORDER_STATUS.ORDER_PLACED
   const isOrderAcceptedOrLater = (status) => status && status !== ORDER_STATUS.PENDING && status !== ORDER_STATUS.ORDER_PLACED
   const isDeliveryStage = (status) => [ORDER_STATUS.IN_TRANSIT, ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED].includes(status)
+  const isQuoteAvailable = (status) => [ORDER_STATUS.ORDER_CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.TRUCK_LOADING, ORDER_STATUS.SHIPPED, ORDER_STATUS.IN_TRANSIT, ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED].includes(status)
+  const isSalesOrderAvailable = (status) => [ORDER_STATUS.PROCESSING, ORDER_STATUS.ORDER_CONFIRMED, ORDER_STATUS.TRUCK_LOADING, ORDER_STATUS.SHIPPED, ORDER_STATUS.IN_TRANSIT, ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED].includes(status)
 
   // Load orders on component mount
   useEffect(() => {
@@ -760,7 +767,8 @@ const OrdersPage = () => {
                 Rate
               </Button>
             )}
-            {isOrderPlacedOnly(order.status) && (
+            {/* Step 3: Quote after order_confirmed (Zoho Quote created & emailed). Steps 1–2 = email only, no quote/SO. */}
+            {isQuoteAvailable(order.status) && !isDeliveryStage(order.status) && (
               <Button
                 size="sm"
                 variant="outline"
@@ -772,7 +780,8 @@ const OrdersPage = () => {
                 {pdfLoading.quote === getLeadId(order) ? '…' : 'Quote'}
               </Button>
             )}
-            {isOrderAcceptedOrLater(order.status) && !isDeliveryStage(order.status) && (
+            {/* Step 4: Sales Order after payment_done (Zoho SO created & emailed). */}
+            {isSalesOrderAvailable(order.status) && !isDeliveryStage(order.status) && (
               <Button
                 size="sm"
                 variant="outline"
@@ -784,6 +793,7 @@ const OrdersPage = () => {
                 {pdfLoading.salesOrder === getLeadId(order) ? '…' : 'Sales Order'}
               </Button>
             )}
+            {/* Step 5: Out for delivery etc. → Invoice + E-Way Bill. */}
             {isDeliveryStage(order.status) && (
               <>
                 <Button
@@ -1045,10 +1055,10 @@ const OrdersPage = () => {
               </div>
             </div>
 
-            {/* Documents: one stage only — Order placed = Quote; Order accepted = Sales Order; Delivery = Invoice + E-way bill */}
+            {/* Documents: Step 1–2 = email only (no quote/SO). Step 3 = Quote. Step 4 = Sales Order. Step 5 = Invoice + E-way bill. */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
-              {isOrderPlacedOnly(displayOrder.status) && quoteGeneratingForLeadId === getLeadId(order) && (
+              {isQuoteAvailable(displayOrder.status) && !isDeliveryStage(displayOrder.status) && quoteGeneratingForLeadId === getLeadId(order) && (
                 <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center gap-2">
                   <span className="text-sm text-amber-800">Quote is being generated, try again in a moment.</span>
                   <Button
@@ -1063,7 +1073,8 @@ const OrdersPage = () => {
                 </div>
               )}
               <div className="flex flex-wrap gap-3">
-                {isOrderPlacedOnly(displayOrder.status) && (
+                {/* Step 3: Download Quote (Zoho Quote created at order_confirmed) */}
+                {isQuoteAvailable(displayOrder.status) && !isDeliveryStage(displayOrder.status) && (
                   <Button
                     variant="outline"
                     className="flex items-center gap-2"
@@ -1074,7 +1085,8 @@ const OrdersPage = () => {
                     {pdfLoading.quote === getLeadId(order) ? 'Downloading…' : 'Download Quote'}
                   </Button>
                 )}
-                {isOrderAcceptedOrLater(displayOrder.status) && !isDeliveryStage(displayOrder.status) && (
+                {/* Step 4: Download Sales Order (Zoho SO created at payment_done) */}
+                {isSalesOrderAvailable(displayOrder.status) && !isDeliveryStage(displayOrder.status) && (
                   <Button
                     variant="outline"
                     className="flex items-center gap-2"
@@ -1085,6 +1097,7 @@ const OrdersPage = () => {
                     {pdfLoading.salesOrder === getLeadId(order) ? 'Downloading…' : 'Sales Order (PDF)'}
                   </Button>
                 )}
+                {/* Step 5: Invoice + E-Way Bill (out for delivery etc.) */}
                 {isDeliveryStage(displayOrder.status) && (
                   <>
                     <Button
