@@ -437,9 +437,9 @@ const CartDrawer = ({ isOpen, onClose }) => {
                         </p>
                       )}
                       */}
-                      {item.deliveryCharges <= 0 && (
+                      {/* {item.deliveryCharges <= 0 && (
                         <p className="text-xs text-green-600 font-medium">Free Delivery</p>
-                      )}
+                      )} */}
                     </div>
 
                     {/* Quantity Controls */}
