@@ -106,7 +106,7 @@ const PincodePopup = ({ isOpen, onClose, onPincodeSubmit, currentPincode }) => {
           </div>
 
           {/* Info Cards */}
-          <div className="space-y-3">
+           {/*<div className="space-y-3">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="flex items-center space-x-3">
                 <Calculator className="w-5 h-5 text-blue-600" />
@@ -130,7 +130,7 @@ const PincodePopup = ({ isOpen, onClose, onPincodeSubmit, currentPincode }) => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Action Buttons */}
           <div className="flex space-x-3 pt-4">
