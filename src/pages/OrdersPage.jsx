@@ -658,8 +658,8 @@ const OrdersPage = () => {
     const statusInfo = ORDER_STATUS_INFO[order.status]
     const paymentStatus = order.paymentStatus || order.payment_status || ''
     const isPaymentPending = typeof paymentStatus === 'string' && paymentStatus.toLowerCase() === 'pending'
-    const showPayNow = order.status === ORDER_STATUS.CONFIRMED || isPaymentPending
-    
+    const showPayNow = (order.status === ORDER_STATUS.CONFIRMED || isPaymentPending);
+    // const custPaid = order.customerPaymentDetails?.utrNum
     return (
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-all duration-200">
         {/* Header */}
@@ -720,8 +720,8 @@ const OrdersPage = () => {
                   alt={item.name}
                   className="w-6 h-6 object-cover rounded"
                 />
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-gray-900 truncate">{item.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-900 truncate" title={item.name}>{item.name}</p>
                   <p className="text-xs text-gray-500">Qty: {item.quantity || 1}</p>
                 </div>
                 {/* Price hidden for now

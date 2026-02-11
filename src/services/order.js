@@ -108,12 +108,13 @@ export const getOrderDetails = async (leadId) => {
 // If your backend supports cart quantity updates via PUT, pass items in updateData (e.g. [{ itemCode, qty }]).
 export const updateOrder = async (leadId, updateData) => {
   try {
-    const payload = {}
+    let payload = {}
     if (updateData.deliveryAddress != null) payload.deliveryAddress = updateData.deliveryAddress
     if (updateData.deliveryPincode != null) payload.deliveryPincode = updateData.deliveryPincode
     if (updateData.deliveryExpectedDate != null) payload.deliveryExpectedDate = updateData.deliveryExpectedDate
     if (updateData.receiverMobileNum != null) payload.receiverMobileNum = updateData.receiverMobileNum
     if (updateData.items != null && Array.isArray(updateData.items)) payload.items = updateData.items
+    if (updateData.utrNum != null) payload = updateData;
     const response = await apiRequest({
       url: URLS.updateOrder(leadId),
       method: 'put',
@@ -128,11 +129,12 @@ export const updateOrder = async (leadId, updateData) => {
   }
 }
 
-export const removeFromCart = async (leadId) => {
+export const removeFromCart = async (leadId, data = null) => {
   try {
     const response = await apiRequest({
       url: URLS.removeFromCart(leadId),
       method: 'delete',
+      data: data,
       setAuthznHeader: true,
       sessionSource: "cookie"
     })

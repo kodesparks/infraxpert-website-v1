@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import * as orderService from '@/services/order'
+import { useAuth } from '@/contexts/AuthContext'
 
 const CartDrawer = ({ isOpen, onClose }) => {
   const { createOrder, placeOrder } = useOrders()
@@ -19,10 +20,11 @@ const CartDrawer = ({ isOpen, onClose }) => {
   const [cartError, setCartError] = useState(null)
   
   const [currentStep, setCurrentStep] = useState('cart') // 'cart' or 'delivery'
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    email: '',
+    fullName: user?.name || '',
+    phoneNumber: user?.phone || '',
+    email: user?.email ||'',
     deliveryAddress: '',
     city: '',
     state: '',
@@ -71,47 +73,109 @@ const CartDrawer = ({ isOpen, onClose }) => {
       
       if (response && response.orders) {
         console.log('🛒 Fetched cart orders:', response.orders.length)
-        // Transform API response to cart items format
-        const transformedItems = response.orders
-          .filter(order => order.orderStatus === 'pending') // Only show pending orders in cart
-          .map(order => {
-            const item = order.items[0] // Each order has one item
-            // Calculate delivery charges properly
-            const basePrice = item.unitPrice
-            const totalAmount = order.totalAmount
-            const calculatedDeliveryCharges = totalAmount > basePrice ? totalAmount - basePrice : 0
-            
-            const transformedItem = {
-              id: order.leadId, // Use leadId as unique identifier
-              name: item.itemCode.itemDescription,
-              image: item.itemCode.primaryImage,
-              currentPrice: item.unitPrice,
-              totalPrice: order.totalAmount,
-              deliveryCharges: calculatedDeliveryCharges, // Use calculated delivery charges
-              quantity: item.qty,
-              leadId: order.leadId,
-              orderNumber: order.leadId,
-              orderStatus: order.orderStatus,
-              vendorId: order.vendorId,
-              deliveryDetails: order.deliveryDetails,
-              itemCode: item.itemCode._id, // MongoDB ObjectId for API calls
-              category: item.itemCode.category,
-              unit: item.itemCode.subCategory
-            }
-          
-          console.log('🛒 Transformed item:', {
-            leadId: transformedItem.leadId,
-            itemCode: transformedItem.itemCode,
-            name: transformedItem.name
+        const cartOrders = response.orders
+          .filter(order => order.orderStatus === 'pending');
+        console.log('orders cart', cartOrders)
+        const transformedItems = cartOrders
+          .flatMap(order => {
+            // Calculate per-order delivery charges once
+            const itemsTotal = order.items.reduce(
+              (sum, i) => sum + (i.unitPrice * i.qty),
+              0
+            )
+
+            const deliveryCharges =
+              order.totalAmount > itemsTotal
+                ? order.totalAmount - itemsTotal
+                : 0
+
+            return order.items.map(item => {
+              const transformedItem = {
+                id: `${order.leadId}-${item.itemCode._id}`, // unique per item
+                leadId: order.leadId,
+                orderNumber: order.leadId,
+
+                // Item details
+                itemCode: item.itemCode._id,
+                name: item.itemCode.itemDescription,
+                image: item.itemCode.primaryImage,
+                category: item.itemCode.category,
+                unit: item.itemCode.subCategory,
+
+                // Pricing
+                currentPrice: item.unitPrice,
+                quantity: item.qty,
+                itemTotal: item.unitPrice * item.qty,
+
+                // Order-level pricing
+                orderTotal: order.totalAmount,
+                deliveryCharges,
+
+                // Meta
+                orderStatus: order.orderStatus,
+                vendorId: order.vendorId,
+                deliveryDetails: order.deliveryDetails
+              }
+
+              console.log('🛒 Transformed cart item:', {
+                leadId: transformedItem.leadId,
+                itemCode: transformedItem.itemCode,
+                name: transformedItem.name
+              })
+
+              return transformedItem
+            })
           })
-          
-          return transformedItem
-        })
+
         console.log('🛒 Transformed cart items:', transformedItems)
         setCartItems(transformedItems)
       } else {
         setCartItems([])
       }
+
+      // if (response && response.orders) {
+      //   console.log('🛒 Fetched cart orders:', response.orders.length)
+      //   // Transform API response to cart items format
+      //   const transformedItems = response.orders
+      //     .filter(order => order.orderStatus === 'pending') // Only show pending orders in cart
+      //     .map(order => {
+      //       const item = order.items[0] // Each order has one item
+      //       // Calculate delivery charges properly
+      //       const basePrice = item.unitPrice
+      //       const totalAmount = order.totalAmount
+      //       const calculatedDeliveryCharges = totalAmount > basePrice ? totalAmount - basePrice : 0
+            
+      //       const transformedItem = {
+      //         id: order.leadId, // Use leadId as unique identifier
+      //         name: item.itemCode.itemDescription,
+      //         image: item.itemCode.primaryImage,
+      //         currentPrice: item.unitPrice,
+      //         totalPrice: order.totalAmount,
+      //         deliveryCharges: calculatedDeliveryCharges, // Use calculated delivery charges
+      //         quantity: item.qty,
+      //         leadId: order.leadId,
+      //         orderNumber: order.leadId,
+      //         orderStatus: order.orderStatus,
+      //         vendorId: order.vendorId,
+      //         deliveryDetails: order.deliveryDetails,
+      //         itemCode: item.itemCode._id, // MongoDB ObjectId for API calls
+      //         category: item.itemCode.category,
+      //         unit: item.itemCode.subCategory
+      //       }
+          
+      //     console.log('🛒 Transformed item:', {
+      //       leadId: transformedItem.leadId,
+      //       itemCode: transformedItem.itemCode,
+      //       name: transformedItem.name
+      //     })
+          
+      //     return transformedItem
+      //   })
+      //   console.log('🛒 Transformed cart items:', transformedItems)
+      //   setCartItems(transformedItems)
+      // } else {
+      //   setCartItems([])
+      // }
     } catch (error) {
       console.error('Error fetching cart items:', error)
       setCartError(error.message)
@@ -132,75 +196,163 @@ const CartDrawer = ({ isOpen, onClose }) => {
   }
 
   // Handle quantity change with API call
-  const handleQuantityChange = async (productId, newQuantity, leadId = null) => {
+  const handleQuantityChange = async (productId, newQuantity, leadId = null, itemCode) => {
     if (newQuantity < 1) {
-      await handleRemoveFromCart(leadId)
+      await handleRemoveFromCart(leadId, itemCode)
     } else {
-      await handleUpdateQuantity(productId, newQuantity, leadId)
+      await handleUpdateQuantity(productId, newQuantity, leadId, itemCode)
     }
   }
 
   // Update quantity via API
-  const handleUpdateQuantity = async (productId, quantity, leadId) => {
+  // const handleUpdateQuantity = async (productId, quantity, leadId) => {
+  //   try {
+  //     // Find the cart item to get the actual itemCode
+  //     const cartItem = cartItems.find(item => item.leadId === leadId)
+  //     if (!cartItem) {
+  //       console.error('❌ Cart item not found for leadId:', leadId)
+  //       return
+  //     }
+
+  //     const updateData = {
+  //       items: [{ itemCode: cartItem.itemCode, qty: quantity }]
+  //     }
+      
+  //     console.log('🔄 Updating quantity:')
+  //     console.log('  - leadId:', leadId)
+  //     console.log('  - itemCode (MongoDB ObjectId):', cartItem.itemCode)
+  //     console.log('  - quantity:', quantity)
+  //     console.log('  - payload:', updateData)
+      
+  //     const response = await orderService.updateOrder(leadId, updateData)
+      
+  //     if (response && response.order) {
+  //       // Update local cart state with API response
+  //       setCartItems(prevItems => 
+  //         prevItems.map(item => 
+  //           item.leadId === leadId 
+  //             ? {
+  //                 ...item,
+  //                 quantity: quantity,
+  //                 totalPrice: response.order.totalAmount,
+  //                 deliveryCharges: response.order.deliveryCharges
+  //               }
+  //             : item
+  //         )
+  //       )
+  //     }
+  //   } catch (error) {
+  //     console.error('Error updating quantity:', error)
+  //     // Refresh cart items on error
+  //     fetchCartItems()
+  //   }
+  // }
+
+  const handleUpdateQuantity = async (itemId, quantity, leadId, itemCode) => {
     try {
-      // Find the cart item to get the actual itemCode
-      const cartItem = cartItems.find(item => item.leadId === leadId)
+      // Find the exact cart item (order + item)
+      const cartItem = cartItems.find(
+        item => item.leadId === leadId && item.itemCode === itemCode
+      );
+
       if (!cartItem) {
-        console.error('❌ Cart item not found for leadId:', leadId)
-        return
+        console.error('❌ Cart item not found:', { leadId, itemCode });
+        return;
       }
 
       const updateData = {
-        items: [{ itemCode: cartItem.itemCode, qty: quantity }]
-      }
-      
-      console.log('🔄 Updating quantity:')
-      console.log('  - leadId:', leadId)
-      console.log('  - itemCode (MongoDB ObjectId):', cartItem.itemCode)
-      console.log('  - quantity:', quantity)
-      console.log('  - payload:', updateData)
-      
-      const response = await orderService.updateOrder(leadId, updateData)
-      
+        items: [
+          {
+            itemCode: itemCode, // MongoDB ObjectId
+            qty: quantity
+          }
+        ]
+      };
+
+      console.log('🔄 Updating quantity:');
+      console.log('  - leadId:', leadId);
+      console.log('  - itemCode:', itemCode);
+      console.log('  - quantity:', quantity);
+      console.log('  - payload:', updateData);
+
+      const response = await orderService.updateOrder(leadId, updateData);
+
       if (response && response.order) {
-        // Update local cart state with API response
-        setCartItems(prevItems => 
-          prevItems.map(item => 
-            item.leadId === leadId 
+        const updatedOrder = response.order;
+
+        // Recalculate per-order delivery charges
+        const itemsTotal = updatedOrder.items.reduce(
+          (sum, i) => sum + i.unitPrice * i.qty,
+          0
+        );
+
+        const deliveryCharges =
+          updatedOrder.totalAmount > itemsTotal
+            ? updatedOrder.totalAmount - itemsTotal
+            : 0;
+
+        // Update only the affected cart item
+        setCartItems(prevItems =>
+          prevItems.map(item =>
+            item.leadId === leadId && item.itemCode === itemCode
               ? {
                   ...item,
                   quantity: quantity,
-                  totalPrice: response.order.totalAmount,
-                  deliveryCharges: response.order.deliveryCharges
+                  itemTotal: quantity * item.currentPrice,
+                  orderTotal: updatedOrder.totalAmount,
+                  deliveryCharges
                 }
               : item
           )
-        )
+        );
       }
     } catch (error) {
-      console.error('Error updating quantity:', error)
-      // Refresh cart items on error
-      fetchCartItems()
+      console.error('❌ Error updating quantity:', error);
+      // safest fallback
+      fetchCartItems();
     }
-  }
+  };
 
   // Remove item from cart via API
-  const handleRemoveFromCart = async (leadId) => {
+  // const handleRemoveFromCart = async (leadId) => {
+  //   try {
+  //     console.log('🗑️ Removing item from cart:', leadId)
+  //     await orderService.removeFromCart(leadId)
+  //     // Remove item from local state
+  //     setCartItems(prevItems => {
+  //       const filtered = prevItems.filter(item => item.leadId !== leadId)
+  //       console.log('✅ Item removed, remaining items:', filtered.length)
+  //       return filtered
+  //     })
+  //   } catch (error) {
+  //     console.error('❌ Error removing from cart:', error)
+  //     // Refresh cart items on error
+  //     fetchCartItems()
+  //   }
+  // }
+  const handleRemoveFromCart = async (leadId, itemCode) => {
     try {
-      console.log('🗑️ Removing item from cart:', leadId)
-      await orderService.removeFromCart(leadId)
-      // Remove item from local state
+      console.log('🗑️ Removing item from cart:', { leadId, itemCode });
+
+      // Call backend with itemCode
+      await orderService.removeFromCart(leadId, { itemCode });
+
+      // Remove only that item from local state
       setCartItems(prevItems => {
-        const filtered = prevItems.filter(item => item.leadId !== leadId)
-        console.log('✅ Item removed, remaining items:', filtered.length)
-        return filtered
-      })
+        const filtered = prevItems.filter(
+          item => !(item.leadId === leadId && item.itemCode === itemCode)
+        );
+
+        console.log('✅ Item removed, remaining items:', filtered.length);
+        return filtered;
+      });
+
     } catch (error) {
-      console.error('❌ Error removing from cart:', error)
-      // Refresh cart items on error
-      fetchCartItems()
+      console.error('❌ Error removing from cart:', error);
+      fetchCartItems(); // fallback refresh
     }
-  }
+  };
+
 
   // Clear entire cart via API
   const handleClearCart = async () => {
@@ -407,7 +559,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
             ) : (
               <div className="p-6 space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.leadId} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                  <div key={item.itemCode} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                     {/* Product Image */}
                     <div className="flex-shrink-0">
                       <img
@@ -419,7 +571,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
 
                     {/* Product Details */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-800 truncate">
+                      <h3 className="text-sm font-semibold text-gray-800 truncate" title={item.name}>
                         {item.name}
                       </h3>
                       <p className="text-xs text-gray-600 mb-1">{item.brand}</p>
@@ -445,7 +597,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
                     {/* Quantity Controls */}
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.leadId)}
+                        onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.leadId, item.itemCode)}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                         title="Decrease quantity"
                       >
@@ -458,13 +610,13 @@ const CartDrawer = ({ isOpen, onClose }) => {
                         onChange={(e) => {
                           const newValue = parseInt(e.target.value) || 1
                           if (newValue >= 1) {
-                            handleQuantityChange(item.id, newValue, item.leadId)
+                            handleQuantityChange(item.id, newValue, item.leadId, item.itemCode)
                           }
                         }}
                         onBlur={(e) => {
                           const value = parseInt(e.target.value)
                           if (!value || value < 1) {
-                            handleQuantityChange(item.id, 1, item.leadId)
+                            handleQuantityChange(item.id, 1, item.leadId, item.itemCode)
                           }
                         }}
                         onKeyDown={(e) => {
@@ -476,7 +628,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
                         style={{ appearance: 'textfield' }}
                       />
                       <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.leadId)}
+                        onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.leadId, item.itemCode)}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                         title="Increase quantity"
                       >
@@ -486,7 +638,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
 
                     {/* Remove Button */}
                     <button
-                      onClick={() => handleRemoveFromCart(item.leadId)}
+                      onClick={() => handleRemoveFromCart(item.leadId, item.itemCode)}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -495,7 +647,8 @@ const CartDrawer = ({ isOpen, onClose }) => {
                 ))}
               </div>
             )
-          ) : (
+          ) : null}
+          {currentStep === 'delivery' && (
             // Delivery Step
             <div className="p-6 space-y-6">
               {/* Personal Information */}

@@ -239,7 +239,12 @@ const LoginPage = () => {
 
         {/* Footer */}
         <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>© 2025 InfraXpert. All rights reserved.</p>
+          <div className="text-gray-400 text-sm">© {new Date().getFullYear()} InfraXpert. All rights reserved.<br/>
+              Designed &amp; Developed by {` `}
+              <b><a href='https://www.kodespark.com' target='_blank' className="font-bold underline hover:text-black" >
+              Kodespark IT
+              </a></b>
+              </div>
         </div>
       </div>
     </div>

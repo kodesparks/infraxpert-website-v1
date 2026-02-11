@@ -200,6 +200,7 @@ export const OrdersProvider = ({ children }) => {
       if (response && response.orders) {
         // Transform API orders to UI format
         const transformedOrders = response.orders.map(order => ({
+          ...order,
           id: order.leadId || order._id,
           orderNumber: order.formattedLeadId || order.leadId,
           items: (order.items || []).map(item => ({
@@ -234,7 +235,8 @@ export const OrdersProvider = ({ children }) => {
             name: order.custUserId?.name || 'Customer',
             phone: order.custUserId?.phone || '',
             email: order.custUserId?.email || ''
-          }
+          },
+
         }))
         
         dispatch({ type: ORDERS_ACTIONS.SET_ORDERS, payload: transformedOrders })
@@ -255,6 +257,7 @@ export const OrdersProvider = ({ children }) => {
       if (response && response.order) {
         // Transform API order to UI format
         const transformedOrder = {
+          ...response.order,
           id: response.order.leadId,
           orderNumber: response.order.formattedLeadId,
           items: (response.order.items || []).map(item => ({

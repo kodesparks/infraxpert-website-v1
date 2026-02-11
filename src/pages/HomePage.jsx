@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Truck, Shield, Clock, ShoppingCart, User, MapPin, Check, Calculator, Headphones, FileText, DollarSign, Globe, Award, Smartphone, CreditCard, Phone, Award as AwardIcon } from 'lucide-react'
+import { Truck, Shield, Clock, ShoppingCart, User, MapPin, Check, Calculator, Headphones, FileText, DollarSign, Globe, Award, Smartphone, CreditCard, Phone, Award as AwardIcon, Underline } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import heroBackground from '@/assets/images/hero-background.jpg'
 import cementImage from '@/assets/images/cement.jpg'
@@ -492,7 +492,12 @@ const HomePage = () => {
           </div>
           <div className="border-t border-gray-800 mt-16 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <div className="text-gray-400 text-sm">© 2025 InfraXpert. All rights reserved.</div>
+              <div className="text-gray-400 text-sm">© {new Date().getFullYear()} InfraXpert. All rights reserved.<br/>
+              Designed &amp; Developed by {` `}
+              <b><a href='https://www.kodespark.com' target='_blank' className="font-bold underline hover:text-white" >
+              Kodespark IT
+              </a></b>
+              </div>
               <div className="flex space-x-6 text-sm">
                 <a className="text-gray-400 hover:text-white transition-colors" href="/privacy">Privacy Policy</a>
                 <a className="text-gray-400 hover:text-white transition-colors" href="/terms">Terms of Service</a>

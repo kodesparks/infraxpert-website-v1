@@ -349,11 +349,26 @@
       setIsProcessing(true)
 
       try {
-        // Just simulate a short processing delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-
-        setIsProcessing(false)
+        let updateData = {};
+        if (selectedPaymentMethod === 'manual_utr') {
+          updateData = {
+            utrNum: paymentData.utrNumber,
+            bankName: paymentData.bankName,
+            accNumber: paymentData.accountNumber
+          }
+        }
+        const orderId = location.state?.orderId
+        console.log("payment",orderId, updateData);
+        const response = await orderService.updateOrder(orderId, updateData);
+        if (response && response.order) {
+          setIsProcessing(false)
         setOrderPlaced(true)
+        // const updatedOrder = response.order;
+        }
+        // // Just simulate a short processing delay
+        // await new Promise(resolve => setTimeout(resolve, 1500))
+
+        
 
         // Clear cart only for standard checkout flow
         if (!isOrderPaymentFlow) {
