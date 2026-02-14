@@ -36,7 +36,8 @@
       transactionId: '',
       chequeNumber: '',
       ddNumber: '',
-      utrNumber: ''
+      utrNumber: '',
+      paidAmount: '',
     })
     const [errors, setErrors] = useState({})
     const [isProcessing, setIsProcessing] = useState(false)
@@ -337,6 +338,9 @@
         if (!paymentData.accountNumber) {
           newErrors.accountNumber = 'Account number is required'
         }
+         if (!paymentData.paidAmount) {
+          newErrors.paidAmount = 'Paid amount is required'
+        }
       }
 
       setErrors(newErrors)
@@ -354,7 +358,8 @@
           updateData = {
             utrNum: paymentData.utrNumber,
             bankName: paymentData.bankName,
-            accNumber: paymentData.accountNumber
+            accNumber: paymentData.accountNumber,
+            paidAmount: paymentData.paidAmount
           }
         }
         const orderId = location.state?.orderId
@@ -380,14 +385,14 @@
           }
         }
 
-        setTimeout(() => {
-          navigate('/orders', {
-            state: {
-              message: 'Payment flow completed!',
-              orderId: orderIdFromState
-            }
-          })
-        }, 2000)
+        // setTimeout(() => {
+        //   navigate('/orders', {
+        //     state: {
+        //       message: 'Payment flow completed!',
+        //       orderId: orderIdFromState
+        //     }
+        //   })
+        // }, 2000)
       } catch (error) {
         console.error('Payment processing error:', error)
         setIsProcessing(false)
@@ -396,9 +401,9 @@
     }
 
     const displayItems = isOrderPaymentFlow ? (orderSummary?.items || []) : items
-    const totalAmount = isOrderPaymentFlow
-      ? orderSummary?.finalAmount || orderSummary?.totalAmount || 0
-      : getTotalPrice()
+    // const totalAmount = isOrderPaymentFlow
+    //   ? orderSummary?.finalAmount || orderSummary?.totalAmount || 0
+    //   : getTotalPrice()
     const displayDeliveryDetails = isOrderPaymentFlow
       ? {
           fullName: orderSummary?.customerInfo?.name,
@@ -440,16 +445,48 @@
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center shadow-lg">
+            
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Order Placed Successfully!</h1>
+            
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              Payment Submitted Successfully!
+            </h1>
+
             <p className="text-gray-600 mb-4">
-              Your order has been confirmed and will be delivered soon.
+              InfraXpert will review your payment and confirm your order shortly.
             </p>
-            <p className="text-sm text-gray-500">
-              Redirecting to homepage...
+
+            <p className="text-sm text-gray-500 mb-6">
+              Thank you for your patience.
             </p>
+
+            <button
+              onClick={() => navigate('/orders', {
+                state: {
+                  message: 'Payment flow completed!',
+                  orderId: orderIdFromState
+                }
+              })}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Go to Orders
+            </button>
+
           </div>
         </div>
+
+        // <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        //   <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center shadow-lg">
+        //     <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+        //     <h1 className="text-2xl font-bold text-gray-800 mb-2">Order Placed Successfully!</h1>
+        //     <p className="text-gray-600 mb-4">
+        //       Your order has been confirmed and will be delivered soon.
+        //     </p>
+        //     <p className="text-sm text-gray-500">
+        //       Redirecting to homepage...
+        //     </p>
+        //   </div>
+        // </div>
       )
     }
 
@@ -518,7 +555,7 @@
                 <div className="bg-white rounded-lg p-6 shadow-sm">
                   <h2 className="text-lg font-semibold text-gray-800 mb-4">Payment Details</h2>
                   
-                  {selectedPaymentMethod === 'card' && (
+                  {/* {selectedPaymentMethod === 'card' && (
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -829,9 +866,9 @@
                         </div>
                       </div>
                     </div>
-                  )}
+                  )} */}
 
-                  {selectedPaymentMethod === 'manual_utr' && (
+                  {selectedPaymentMethod === 'manual_utr' ? (
                     <div className="space-y-4">
                       <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
                         <h3 className="font-semibold text-blue-800 mb-3 text-lg">Bank Transfer Details</h3>
@@ -899,13 +936,53 @@
                           )}
                         </div>
                       </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Amount Paid *
+                        </label>
+                        <Input
+                          name="paidAmount"
+                          value={paymentData.paidAmount}
+                          onChange={handleInputChange}
+                          placeholder="Enter paid amount "
+                          className={errors.paidAmount ? 'border-red-500' : ''}
+                        />
+                        {errors.paidAmount && (
+                          <p className="text-red-500 text-sm mt-1">{errors.paidAmount}</p>
+                        )}
+                        
+                      </div>
                     </div>
-                  )}
+                  ) 
+                  :
+                    (<div className="space-y-4">
+                      <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
+
+                        <h3 className="font-semibold text-yellow-800 mb-2 text-lg">
+                          Payment Method Not Available
+                        </h3>
+
+                        <div className="bg-white p-4 rounded-lg mb-3">
+                          <p className="text-sm text-gray-700 font-medium">
+                            The selected payment method is currently not available.
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            It will be enabled soon. Please choose another payment option or try again later.
+                          </p>
+                        </div>
+
+                        <p className="text-sm text-yellow-700 font-medium">
+                          We are working to make this payment method available as soon as possible. Thank you for your patience.
+                        </p>
+
+                      </div>
+                    </div>
+                    )}                  
                 </div>
               )}
 
               {/* Delivery Details */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
+              {/* <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Delivery Details</h2>
                 
                 <div className="space-y-3">
@@ -941,7 +1018,7 @@
                     </div>
                   )}
                 </div>
-              </div>
+              </div> */}
 
               {/* Order Summary */}
               <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -976,7 +1053,7 @@
 
                 <Button
                   onClick={handlePayment}
-                  disabled={!selectedPaymentMethod || isProcessing || (isOrderPaymentFlow && !orderSummary)}
+                  disabled={!selectedPaymentMethod || isProcessing || (isOrderPaymentFlow && !orderSummary) || selectedPaymentMethod !== 'manual_utr'}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isProcessing ? 'Processing Payment...' : 'Pay Now'}

@@ -197,7 +197,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
 
   // Handle quantity change with API call
   const handleQuantityChange = async (productId, newQuantity, leadId = null, itemCode) => {
-    if (newQuantity < 1) {
+    if (newQuantity !== '' && newQuantity < 1) {
       await handleRemoveFromCart(leadId, itemCode)
     } else {
       await handleUpdateQuantity(productId, newQuantity, leadId, itemCode)
@@ -275,7 +275,8 @@ const CartDrawer = ({ isOpen, onClose }) => {
       console.log('  - quantity:', quantity);
       console.log('  - payload:', updateData);
 
-      const response = await orderService.updateOrder(leadId, updateData);
+      if(quantity > 1 ) {
+const response = await orderService.updateOrder(leadId, updateData);
 
       if (response && response.order) {
         const updatedOrder = response.order;
@@ -306,6 +307,19 @@ const CartDrawer = ({ isOpen, onClose }) => {
           )
         );
       }
+      
+      }
+      setCartItems(prevItems =>
+          prevItems.map(item =>
+            item.leadId === leadId && item.itemCode === itemCode
+              ? {
+                  ...item,
+                  quantity: quantity,
+                  itemTotal: quantity * item.currentPrice
+                }
+              : item
+          )
+        );
     } catch (error) {
       console.error('❌ Error updating quantity:', error);
       // safest fallback
@@ -367,7 +381,14 @@ const CartDrawer = ({ isOpen, onClose }) => {
   }
 
   const handleProceedToCheckout = () => {
-    setCurrentStep('delivery')
+    console.log(cartItems);
+    const allValid = cartItems.every(item => Number(item.quantity) >= 1);
+    if(!allValid) {
+      alert("Please enter valid quantity for all items.")
+    } else {
+      setCurrentStep('delivery')
+    }
+    
   }
 
   const handleContactSupport = () => {
@@ -559,91 +580,73 @@ const CartDrawer = ({ isOpen, onClose }) => {
             ) : (
               <div className="p-6 space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.itemCode} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                    {/* Product Image */}
-                    <div className="flex-shrink-0">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                    </div>
+                  <div key={item.itemCode} className="p-4 bg-gray-50 rounded-lg space-y-3">
 
-                    {/* Product Details */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-800 truncate" title={item.name}>
-                        {item.name}
-                      </h3>
-                      <p className="text-xs text-gray-600 mb-1">{item.brand}</p>
-                      {/* Price hidden for now
-                      <p className="text-sm font-bold text-gray-800">
-                        ₹{(item.totalPrice || item.currentPrice).toLocaleString()}{item.unit}
-                      </p>
-                      {item.deliveryCharges > 0 ? (
-                        <p className="text-xs text-gray-500">
-                          Base: ₹{item.currentPrice.toLocaleString()} + Delivery: ₹{item.deliveryCharges.toLocaleString()}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-green-600 font-medium">
-                          Free Delivery
-                        </p>
-                      )}
-                      */}
-                      {/* {item.deliveryCharges <= 0 && (
-                        <p className="text-xs text-green-600 font-medium">Free Delivery</p>
-                      )} */}
-                    </div>
+                    {/* Row 1 → Full Product Name */}
+                    <h3 className="text-sm font-semibold text-gray-800 break-words">
+                      {item.name}
+                    </h3>
 
-                    {/* Quantity Controls */}
-                    <div className="flex items-center space-x-2">
+                    {/* Row 2 → Image + Details + Actions */}
+                    <div className="flex items-center space-x-4">
+
+                      {/* Product Image */}
+                      <div className="flex-shrink-0">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-600 mb-1">{item.brand}</p>
+                      </div>
+
+                      {/* Quantity Controls */}
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.leadId, item.itemCode)}
+                          className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50"
+                        >
+                          <Minus className="w-4 h-4 text-gray-600" />
+                        </button>
+
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            // const newValue = parseInt(e.target.value) || 1;
+                            // if (newValue >= 1) {
+                              handleQuantityChange(item.id, newValue, item.leadId, item.itemCode);
+                            // }
+                          
+                          }}
+                          className="w-16 px-2 py-1 text-center border border-gray-300 rounded-lg"
+                        />
+
+                        <button
+                          onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.leadId, item.itemCode)}
+                          className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50"
+                        >
+                          <Plus className="w-4 h-4 text-gray-600" />
+                        </button>
+                      </div>
+
+                      {/* Remove Button */}
                       <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.leadId, item.itemCode)}
-                        className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
-                        title="Decrease quantity"
+                        onClick={() => handleRemoveFromCart(item.leadId, item.itemCode)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-full"
                       >
-                        <Minus className="w-4 h-4 text-gray-600" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => {
-                          const newValue = parseInt(e.target.value) || 1
-                          if (newValue >= 1) {
-                            handleQuantityChange(item.id, newValue, item.leadId, item.itemCode)
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const value = parseInt(e.target.value)
-                          if (!value || value < 1) {
-                            handleQuantityChange(item.id, 1, item.leadId, item.itemCode)
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.target.blur()
-                          }
-                        }}
-                        className="w-16 px-2 py-1 text-center font-medium border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        style={{ appearance: 'textfield' }}
-                      />
-                      <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.leadId, item.itemCode)}
-                        className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
-                        title="Increase quantity"
-                      >
-                        <Plus className="w-4 h-4 text-gray-600" />
-                      </button>
-                    </div>
 
-                    {/* Remove Button */}
-                    <button
-                      onClick={() => handleRemoveFromCart(item.leadId, item.itemCode)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    </div>
                   </div>
+
                 ))}
               </div>
             )
@@ -845,6 +848,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
             {/* Action Buttons */}
             <div className="space-y-3">
               <Button
+              disabled={!cartItems.every(item => Number(item.quantity) >= 1)}
                 onClick={handleProceedToCheckout}
                 className="w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-lg font-semibold"
               >
