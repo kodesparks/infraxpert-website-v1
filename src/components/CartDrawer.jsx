@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import * as orderService from '@/services/order'
 import { useAuth } from '@/contexts/AuthContext'
+import { states } from './Constants'
 
 const CartDrawer = ({ isOpen, onClose }) => {
   const { createOrder, placeOrder } = useOrders()
@@ -773,13 +774,22 @@ const response = await orderService.updateOrder(leadId, updateData);
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         State *
                       </label>
-                      <Input
+                      <select
                         name="state"
                         value={formData.state}
                         onChange={handleInputChange}
-                        placeholder="State"
-                        className={errors.state ? 'border-red-500' : ''}
-                      />
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          errors.state ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select State</option>
+
+                        {states.map((state) => (
+                          <option key={state} value={state}>
+                            {state}
+                          </option>
+                        ))}
+                      </select>
                       {errors.state && (
                         <p className="text-red-500 text-sm mt-1">{errors.state}</p>
                       )}
