@@ -416,23 +416,23 @@ const response = await orderService.updateOrder(leadId, updateData);
   const validateForm = () => {
     const newErrors = {}
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required'
-    }
+    // if (!formData.fullName.trim()) {
+    //   newErrors.fullName = 'Full name is required'
+    // }
 
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required'
-    } else if (!/^\d{10}$/.test(formData.phoneNumber.replace(/\D/g, ''))) {
-      newErrors.phoneNumber = 'Please enter a valid 10-digit phone number'
-    }
+    // if (!formData.phoneNumber.trim()) {
+    //   newErrors.phoneNumber = 'Phone number is required'
+    // } else if (!/^\d{10}$/.test(formData.phoneNumber.replace(/\D/g, ''))) {
+    //   newErrors.phoneNumber = 'Please enter a valid 10-digit phone number'
+    // }
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address'
-    }
+    // if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    //   newErrors.email = 'Please enter a valid email address'
+    // }
 
-    if (!formData.deliveryAddress.trim()) {
-      newErrors.deliveryAddress = 'Delivery address is required'
-    }
+    // if (!formData.deliveryAddress.trim()) {
+    //   newErrors.deliveryAddress = 'Delivery address is required'
+    // }
 
     if (!formData.city.trim()) {
       newErrors.city = 'City is required'
@@ -459,12 +459,12 @@ const response = await orderService.updateOrder(leadId, updateData);
         const orderPromises = cartItems.map(async (item) => {
           if (item.leadId) {
             const orderData = {
-              deliveryAddress: `${formData.deliveryAddress}, ${formData.city}, ${formData.state}`,
+              // deliveryAddress: `${formData.deliveryAddress}, ${formData.city}, ${formData.state}`,
               deliveryPincode: formData.pinCode,
               deliveryExpectedDate: formData.preferredDeliveryDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-              receiverMobileNum: formData.phoneNumber,
-              receiverName: formData.fullName,
-              email: formData.email,
+              // receiverMobileNum: formData.phoneNumber,
+              // receiverName: formData.fullName,
+              // email: formData.email,
               city: formData.city,
               state: formData.state
             }
@@ -516,14 +516,14 @@ const response = await orderService.updateOrder(leadId, updateData);
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            {currentStep === 'delivery' && (
+            {/* {currentStep === 'delivery' && (
               <button
                 onClick={handleBackToCart}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
-            )}
+            )} */}
             <ShoppingBag className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-bold text-gray-800">
               {currentStep === 'cart' ? 'Shopping Cart' : 'Delivery Details'}
@@ -649,85 +649,12 @@ const response = await orderService.updateOrder(leadId, updateData);
                   </div>
 
                 ))}
-              </div>
-            )
-          ) : null}
-          {currentStep === 'delivery' && (
-            // Delivery Step
-            <div className="p-6 space-y-6">
-              {/* Personal Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Personal Information</h3>
-                <div className="space-y-4">
-                  {/* Full Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name *
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        placeholder="Enter your full name"
-                        className={`pl-10 ${errors.fullName ? 'border-red-500' : ''}`}
-                      />
-                    </div>
-                    {errors.fullName && (
-                      <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
-                    )}
-                  </div>
 
-                  {/* Receiver Phone Number */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Receiver Phone Number *
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        name="phoneNumber"
-                        value={formData.phoneNumber}
-                        onChange={handleInputChange}
-                        placeholder="Enter receiver phone number"
-                        className={`pl-10 ${errors.phoneNumber ? 'border-red-500' : ''}`}
-                      />
-                    </div>
-                    {errors.phoneNumber && (
-                      <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="Enter your email"
-                        className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Delivery Address */}
-              <div>
+                <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Delivery Address</h3>
                 <div className="space-y-4">
                   {/* Delivery Address */}
-                  <div>
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Delivery Address *
                     </label>
@@ -750,7 +677,7 @@ const response = await orderService.updateOrder(leadId, updateData);
                         {formData.deliveryAddress.length}/500 characters
                       </p>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* City and State */}
                   <div className="grid grid-cols-2 gap-4">
@@ -808,7 +735,7 @@ const response = await orderService.updateOrder(leadId, updateData);
                       placeholder="6-digit PIN code"
                       maxLength={6}
                       // disabled={!!userPincode}
-                      className={`${errors.pinCode ? 'border-red-500' : ''} ${userPincode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      className={`${errors.pinCode ? 'border-red-500' : ''} ${userPincode ? '' : ''}`}
                     />
                     {userPincode && (
                       <p className="text-gray-500 text-xs mt-1">
@@ -839,8 +766,10 @@ const response = await orderService.updateOrder(leadId, updateData);
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+              </div>
+            )
+          ) : null}
+          
         </div>
 
         {/* Footer */}
@@ -857,13 +786,19 @@ const response = await orderService.updateOrder(leadId, updateData);
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              <Button
+              {/* <Button
               disabled={!cartItems.every(item => Number(item.quantity) >= 1)}
                 onClick={handleProceedToCheckout}
                 className="w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-lg font-semibold"
               >
                 Enter Delivery Address
-              </Button>
+              </Button> */}
+              <Button
+              onClick={handlePlaceOrder}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold"
+            >
+              Place Order
+            </Button>
               <Button
                 onClick={handleContactSupport}
                 variant="outline"
