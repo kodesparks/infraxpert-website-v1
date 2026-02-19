@@ -16,7 +16,7 @@ const LoginPage = () => {
     phone: '',
     password: ''
   })
-  const [loginMethod, setLoginMethod] = useState('email') // 'email' or 'phone'
+  const [loginMethod, setLoginMethod] = useState('phone') // 'email' or 'phone'
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')

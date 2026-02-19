@@ -659,7 +659,9 @@ const OrdersPage = () => {
     const paymentStatus = order.paymentStatus || order.payment_status || ''
     const isPaymentPending = typeof paymentStatus === 'string' && paymentStatus.toLowerCase() === 'pending'
     const showPayNow = (order.status === ORDER_STATUS.CONFIRMED || isPaymentPending);
-    // const custPaid = order.customerPaymentDetails?.utrNum
+    const custPaid = order.customerPaymentDetails?.paidAmount > 0 ? true : false;
+    // const custPaid = order.customerPaymentDetails?.paidAmount > 0 ? true : false;
+    const isPaymentVerificationPending = (order.status === ORDER_STATUS.CONFIRMED && custPaid) ? true : false;
     return (
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-all duration-200">
         {/* Header */}
@@ -678,18 +680,18 @@ const OrdersPage = () => {
             <button
               type="button"
               onClick={() => setMobileTrackingOrder(order)}
-              className={`inline-flex sm:hidden items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${getStatusClasses(order.status)}`}
+              className={`inline-flex sm:hidden items-center px-2 py-1 rounded-full text-xs font-medium whitespace-normal break-words text-center ${getStatusClasses(order.status)}`}
             >
               {statusInfo?.label}
             </button>
-            <span className={`hidden sm:inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${getStatusClasses(order.status)}`}>
-              {statusInfo?.label}
+            <span className={`hidden sm:inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-normal break-words text-center max-w-[150px] ${getStatusClasses(order.status)}`}>
+              {isPaymentVerificationPending ? 'Payment Under Verification' : statusInfo?.label}
             </span>
           </div>
         </div>
 
         {/* Payment Required Alert */}
-        {showPayNow && (
+        {!custPaid && showPayNow && (
           <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 text-blue-600" />

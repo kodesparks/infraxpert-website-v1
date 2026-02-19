@@ -807,7 +807,7 @@ const response = await orderService.updateOrder(leadId, updateData);
                       onChange={handleInputChange}
                       placeholder="6-digit PIN code"
                       maxLength={6}
-                      disabled={!!userPincode}
+                      // disabled={!!userPincode}
                       className={`${errors.pinCode ? 'border-red-500' : ''} ${userPincode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     />
                     {userPincode && (
