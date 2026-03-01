@@ -655,6 +655,23 @@ export const getInvoicePdf = async (leadId) => {
   }
 }
 
+// GET .../pdf/payment - Payment Reciept. Created at step 5 (out for delivery etc.).
+export const getPaymentRecieptPdf = async (leadId) => {
+  try {
+    const response = await apiRequest({
+      url: URLS.getPaymentPdf(leadId),
+      method: 'get',
+      setAuthznHeader: true,
+      sessionSource: "cookie",
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching payment PDF:', error)
+    throw error
+  }
+}
+
 // GET .../pdf/ewaybill - E-Way Bill. Created at step 5 (out for delivery etc.).
 export const getEwaybillPdf = async (leadId) => {
   try {

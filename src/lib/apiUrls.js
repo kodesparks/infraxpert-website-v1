@@ -51,6 +51,7 @@ export const URLS = {
   getSalesOrderPdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/sales-order`,
   getPurchaseOrderPdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/po`,
   getInvoicePdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/invoice`,
+  getPaymentPdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/payment`,
   getEwaybillPdf: (leadId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/order/customer/orders/${leadId}/pdf/ewaybill`,
   
   // Cart-specific APIs (cart = GET customer/orders?status=pending; no separate summary endpoint)

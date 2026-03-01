@@ -67,7 +67,7 @@ const OrdersPage = () => {
   const [showDateModal, setShowDateModal] = useState(false)
   const [changeEligibility, setChangeEligibility] = useState(null)
   const [isLoadingEligibility, setIsLoadingEligibility] = useState(false)
-  const [pdfLoading, setPdfLoading] = useState({ quote: null, salesOrder: null, invoice: null, ewaybill: null })
+  const [pdfLoading, setPdfLoading] = useState({ quote: null, salesOrder: null, invoice: null, ewaybill: null, payment: null })
   // Order flow (live): place order → vendor accept → order confirmed (Quote created & emailed) → payment done (SO created & emailed) → later Invoice.
   // Order response includes zohoQuoteId, zohoSalesOrderId, zohoInvoiceId when set. APIs unchanged; backend tested with npm run test:zoho-flow.
   // At a time show only one PDF: Quote at Order Accepted; once Sales Order comes, show only Sales Order; at delivery show only Invoice + E-way.
@@ -255,7 +255,7 @@ const OrdersPage = () => {
   const handleDownloadPdf = async (order, type) => {
     const leadId = getLeadId(order)
     if (!leadId) return
-    const keyMap = { quote: 'quote', 'sales-order': 'salesOrder', invoice: 'invoice', ewaybill: 'ewaybill' }
+    const keyMap = { quote: 'quote', 'sales-order': 'salesOrder', invoice: 'invoice', ewaybill: 'ewaybill', payment: 'payment' }
     const key = keyMap[type] || type
     setPdfLoading(prev => ({ ...prev, [key]: leadId }))
     try {
@@ -264,11 +264,13 @@ const OrdersPage = () => {
         quote: `quote-${leadId}.pdf`,
         'sales-order': `sales-order-${leadId}.pdf`,
         invoice: `invoice-${leadId}.pdf`,
+        payment: `payment-${leadId}.pdf`,
         ewaybill: `ewaybill-${leadId}.pdf`
       }
       if (type === 'quote') blob = await orderService.getQuotePdf(leadId)
       else if (type === 'sales-order') blob = await orderService.getSalesOrderPdf(leadId)
       else if (type === 'invoice') blob = await orderService.getInvoicePdf(leadId)
+      else if (type === 'payment') blob = await orderService.getPaymentRecieptPdf(leadId)
       else if (type === 'ewaybill') blob = await orderService.getEwaybillPdf(leadId)
       else return
       const url = URL.createObjectURL(blob)
@@ -825,12 +827,22 @@ const OrdersPage = () => {
                   size="sm"
                   variant="outline"
                   className="text-xs border-gray-200 text-gray-600 hover:bg-gray-50 px-2 py-1 h-6"
+                  onClick={() => handleDownloadPdf(order, 'payment')}
+                  disabled={pdfLoading.payment === getLeadId(order)}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  {pdfLoading.payment === getLeadId(order) ? '…' : 'Payment Receipt'}
+                </Button>
+                {/* <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs border-gray-200 text-gray-600 hover:bg-gray-50 px-2 py-1 h-6"
                   onClick={() => handleDownloadPdf(order, 'ewaybill')}
                   disabled={pdfLoading.ewaybill === getLeadId(order)}
                 >
                   <Download className="w-3 h-3 mr-1" />
                   {pdfLoading.ewaybill === getLeadId(order) ? '…' : 'E-way bill'}
-                </Button>
+                </Button> */}
               </>
             )}
           </div>
