@@ -799,6 +799,7 @@ const OrdersPage = () => {
             )}
             {/* Order confirmed / payment: Sales Order only (no Quote). */}
             {isSalesOrderAvailable(order.status) && (
+              <>
               <Button
                 size="sm"
                 variant="outline"
@@ -809,6 +810,17 @@ const OrdersPage = () => {
                 <Download className="w-3 h-3 mr-1" />
                 {pdfLoading.salesOrder === getLeadId(order) ? '…' : 'Sales Order'}
               </Button>
+              <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs border-gray-200 text-gray-600 hover:bg-gray-50 px-2 py-1 h-6"
+                  onClick={() => handleDownloadPdf(order, 'payment')}
+                  disabled={pdfLoading.payment === getLeadId(order)}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  {pdfLoading.payment === getLeadId(order) ? '…' : 'Payment Receipt'}
+                </Button>
+                </>
             )}
             {/* Delivery only: Invoice + E-Way (no Quote, no Sales Order). */}
             {isDeliveryStage(order.status) && (

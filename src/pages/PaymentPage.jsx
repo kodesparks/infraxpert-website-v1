@@ -290,11 +290,11 @@
         if (!paymentData.bankName) {
           newErrors.bankName = 'Bank name is required'
         }
-        if (!paymentData.accountNumber) {
-          newErrors.accountNumber = 'Account number is required'
-        } else if (!/^\d{9,18}$/.test(paymentData.accountNumber)) {
-          newErrors.accountNumber = 'Please enter a valid account number'
-        }
+        // if (!paymentData.accountNumber) {
+        //   newErrors.accountNumber = 'Account number is required'
+        // } else if (!/^\d{9,18}$/.test(paymentData.accountNumber)) {
+        //   newErrors.accountNumber = 'Please enter a valid account number'
+        // }
         if (!paymentData.ifscCode) {
           newErrors.ifscCode = 'IFSC code is required'
         } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(paymentData.ifscCode.toUpperCase())) {
@@ -335,9 +335,9 @@
         if (!paymentData.bankName) {
           newErrors.bankName = 'Bank name is required'
         }
-        if (!paymentData.accountNumber) {
-          newErrors.accountNumber = 'Account number is required'
-        }
+        // if (!paymentData.accountNumber) {
+        //   newErrors.accountNumber = 'Account number is required'
+        // }
          if (!paymentData.paidAmount) {
           newErrors.paidAmount = 'Paid amount is required'
         }
@@ -358,7 +358,7 @@
           updateData = {
             utrNum: paymentData.utrNumber,
             bankName: paymentData.bankName,
-            accNumber: paymentData.accountNumber,
+            accNumber: paymentData.accountNumber || '',
             paidAmount: paymentData.paidAmount
           }
         }
@@ -922,7 +922,7 @@
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Account Number *
+                            Account Number
                           </label>
                           <Input
                             name="accountNumber"
