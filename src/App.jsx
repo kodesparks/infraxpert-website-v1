@@ -23,6 +23,9 @@ import PaymentPage from '@/pages/PaymentPage'
 import PlaceOrderPage from '@/pages/PlaceOrderPage'
 import OrdersPage from '@/pages/OrdersPage'
 import OrderTrackingPage from '@/pages/OrderTrackingPage'
+import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage'
+import TermsPage from '@/pages/TermsPage'
+import SitemapPage from '@/pages/SitemapPage'
 import './App.css'
 
 function App() {
@@ -84,6 +87,21 @@ function App() {
           <Route path="/about" element={
             <MainLayout>
               <AboutPage />
+            </MainLayout>
+          } />
+          <Route path="/privacy" element={
+            <MainLayout>
+              <PrivacyPolicyPage />
+            </MainLayout>
+          } />
+          <Route path="/terms" element={
+            <MainLayout>
+              <TermsPage />
+            </MainLayout>
+          } />
+          <Route path="/sitemap" element={
+            <MainLayout>
+              <SitemapPage />
             </MainLayout>
           } />
           <Route path="/contact" element={

@@ -114,14 +114,18 @@ const ProductsPage = () => {
   // Transform API categories to match the existing structure with real counts
   const transformedCategories = [
     { id: 'all', name: 'All Products', count: getCategoryCount('all'), icon: Grid3X3 },
-    ...Object.keys(categories).map(categoryName => ({
-      id: categoryName.toLowerCase().replace(' ', '-'),
-      name: categoryName,
-      count: getCategoryCount(categoryName),
-      icon: categoryName === 'Cement' ? Building : 
-            categoryName === 'Iron' ? Hammer : 
-            categoryName === 'Concrete Mixer' ? Truck : Grid3X3
-    }))
+    ...Object.keys(categories).map(categoryName => {
+      const isConcreteMix = categoryName === 'Concrete Mixer' || categoryName === 'Concrete Mix';
+      return {
+        id: categoryName.toLowerCase().replace(' ', '-'),
+        name: isConcreteMix ? 'Others' : categoryName,
+        originalName: categoryName,
+        count: getCategoryCount(categoryName),
+        icon: categoryName === 'Cement' ? Building : 
+              categoryName === 'Iron' ? Hammer : 
+              categoryName === 'Concrete Mixer' ? Truck : Grid3X3
+      };
+    })
   ]
 
   // Debounced search function
@@ -337,7 +341,7 @@ const ProductsPage = () => {
       return null
     }
     const matchedCategory = transformedCategories.find(cat => cat.id === selectedCategory)
-    return matchedCategory?.name || null
+    return matchedCategory?.originalName || matchedCategory?.name || null
   }, [selectedCategory, transformedCategories])
 
   // Get unique subcategories and grades for the selected category
@@ -442,7 +446,7 @@ const ProductsPage = () => {
     if (categoryId === 'all') {
       updateFilters({ category: '', subCategory: '' })
     } else {
-      const categoryName = transformedCategories.find(cat => cat.id === categoryId)?.name
+      const categoryName = transformedCategories.find(cat => cat.id === categoryId)?.originalName || transformedCategories.find(cat => cat.id === categoryId)?.name
       if (categoryName) {
         filterByCategory(categoryName)
       }
