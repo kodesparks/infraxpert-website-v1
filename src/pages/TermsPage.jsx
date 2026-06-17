@@ -127,7 +127,7 @@ const TermsPage = () => {
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Provide accurate, current, and complete information, including your legal name, company/business name (if applicable), valid email address, phone number, delivery address, and tax statutory registration numbers (such as GST or PAN details).</li>
                     <li>Maintain the security of your password and accept all risks of unauthorized access to your account and the information you provide.</li>
-                    <li>Notify us immediately at <a href="mailto:statecoordinator@infraxpert.co.in" className="text-blue-600 hover:underline">statecoordinator@infraxpert.co.in</a> if you discover or suspect any security breaches or unauthorized use of your account.</li>
+                    <li>Notify us immediately at <a href="mailto:support@infraxpert.in" className="text-blue-600 hover:underline">support@infraxpert.in</a> if you discover or suspect any security breaches or unauthorized use of your account.</li>
                   </ul>
                   <p>
                     We reserve the right to suspend or terminate accounts that provide false details or violate our safety guidelines. Account deactivation or deletion requests will be evaluated on a case-by-case basis.
@@ -296,7 +296,7 @@ const TermsPage = () => {
                   If you have any questions about these Terms of Service, please contact our support team at:
                 </p>
                 <div className="text-sm text-gray-700 font-medium space-y-1">
-                  <div>Email Support: <a href="mailto:statecoordinator@infraxpert.co.in" className="text-blue-600 hover:underline">statecoordinator@infraxpert.co.in</a></div>
+                  <div>Email Support: <a href="mailto:support@infraxpert.in" className="text-blue-600 hover:underline">support@infraxpert.in</a></div>
                   <div>Grievance Officer: <span className="text-gray-950 font-bold">Suresh</span></div>
                 </div>
               </section>

@@ -131,7 +131,7 @@ const PrivacyPolicyPage = () => {
                     We retains user provided Information for as long as the Information is required for the purpose of providing services to you or where the same is required for any purpose for which the Information can be lawfully processed or retained as required under any statutory enactments or applicable laws.
                   </p>
                   <p>
-                    User may update, correct, or confirm provided information by logging on to their accounts on the site/App or by sending a request to <a href="mailto:statecoordinator@infraxpert.co.in" className="text-blue-600 hover:underline">statecoordinator@infraxpert.co.in</a>. The requested changes may take reasonable time due to verification process and server cache policies. In case you would like to receive a copy of our information held by us for porting to another service, please contact us with your request at the email address above.
+                    User may update, correct, or confirm provided information by logging on to their accounts on the site/App or by sending a request to <a href="mailto:support@infraxpert.in" className="text-blue-600 hover:underline">support@infraxpert.in</a>. The requested changes may take reasonable time due to verification process and server cache policies. In case you would like to receive a copy of our information held by us for porting to another service, please contact us with your request at the email address above.
                   </p>
                   <p>
                     Users may also choose to delete or deactivate their accounts on the site/App. We will evaluate such requests on a case-to-case basis and take the requisite action as per applicable law. In this regard, please note that information sought to be deleted may remain with us in archival records for the purpose of compliance of statutory enactments, or for any other lawful purpose. Therefore, users are requested to carefully evaluate what types of information they would like to provide to us at the time of registration.
@@ -284,7 +284,7 @@ const PrivacyPolicyPage = () => {
                     We will take appropriate steps to delete any Personally Identifiable Information of persons less than 18 years of age that has been collected on our Site without verified parental consent upon learning of the existence of such Personally Identifiable Information.
                   </p>
                   <p>
-                    If we become aware that a person submitting personal information is under 18, we will delete the account and all related information as soon as possible. If you believe we might have any information from or about a child under 18 please contact us at <a href="mailto:statecoordinator@infraxpert.co.in" className="text-blue-600 hover:underline">statecoordinator@infraxpert.co.in</a>.
+                    If we become aware that a person submitting personal information is under 18, we will delete the account and all related information as soon as possible. If you believe we might have any information from or about a child under 18 please contact us at <a href="mailto:support@infraxpert.in" className="text-blue-600 hover:underline">support@infraxpert.in</a>.
                   </p>
                 </div>
               </section>
@@ -332,7 +332,7 @@ const PrivacyPolicyPage = () => {
                     </p>
                     <div className="pt-2">
                       <a
-                        href="mailto:statecoordinator@infraxpert.co.in"
+                        href="mailto:support@infraxpert.in"
                         className="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
                       >
                         Email Support
@@ -351,7 +351,7 @@ const PrivacyPolicyPage = () => {
                     </p>
                     <div className="text-sm font-medium text-gray-800 space-y-1">
                       <div>Name: <span className="text-gray-950 font-bold">Suresh</span></div>
-                      <div>Email: <a href="mailto:statecoordinator@infraxpert.co.in" className="text-blue-600 hover:underline">statecoordinator@infraxpert.co.in</a></div>
+                      <div>Email: <a href="mailto:support@infraxpert.in" className="text-blue-600 hover:underline">support@infraxpert.in</a></div>
                     </div>
                   </div>
                 </div>
